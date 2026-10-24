@@ -1,0 +1,1847 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <style>:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); } body { margin: 0; } img { max-width: 100%; } [hidden] { display: none !important; }</style>
+<title>Triptych</title>
+<meta name="description" content="Triptych is an outfit builder in three panels: a top, a bottom and shoes. Swipe one and the rest of the look stays put.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Raleway:wght@300;400;500;600&display=swap">
+<style>
+@property --g { syntax: '<color>'; inherits: true; initial-value: #D7D2CB; }
+@property --l { syntax: '<color>'; inherits: true; initial-value: #6B665F; }
+
+/* Layout: the page is a triptych. Three hinged full-width panels open it, and every
+   section after keeps the rule of three: three steps, three bands, three colours a look. */
+:root {
+  --stone: #E8E4DF;      /* page ground: the splash backdrop */
+  --paper: #FBFAF8;      /* panel surface */
+  --paper-2: #F2EFEA;    /* recessed surface */
+  --ink: #1C1C1C;        /* type and the primary button */
+  --ink-2: #4A4744;      /* running text */
+  --muted: #8A8680;      /* labels */
+  --faint: #B5B0AA;      /* hints */
+  --rule: #D1CBC3;       /* rules, hinges */
+  --hair: rgba(28, 28, 28, .09);
+  --moss: #1A3D2E;       /* the app's "added" state */
+  --on-ink: #FBFAF8;
+  --glass: rgba(232, 228, 223, .76);
+  --shadow-rgb: 40 34 28;
+  --grain: .055;
+
+  --display: 'Cormorant Garamond', Garamond, 'Times New Roman', serif;
+  --sans: 'Raleway', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+
+  --ease: cubic-bezier(.22, .61, .36, 1);
+  --expo: cubic-bezier(.16, 1, .3, 1);
+  --gl: max(clamp(16px, 3.2vw, 44px), env(safe-area-inset-left, 0px));
+  --gr: max(clamp(16px, 3.2vw, 44px), env(safe-area-inset-right, 0px));
+  --nav-h: 62px;
+  --top: calc(var(--nav-h) + env(safe-area-inset-top, 0px));
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --stone: #121110; --paper: #1B1A18; --paper-2: #232120; --ink: #EDE9E3; --ink-2: #C4BFB8;
+    --muted: #8F8A84; --faint: #5C5853; --rule: #36332F; --hair: rgba(237, 233, 227, .09);
+    --moss: #2F6A4C; --on-ink: #151413; --glass: rgba(18, 17, 16, .78); --shadow-rgb: 0 0 0; --grain: .045;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --stone: #121110; --paper: #1B1A18; --paper-2: #232120; --ink: #EDE9E3; --ink-2: #C4BFB8;
+  --muted: #8F8A84; --faint: #5C5853; --rule: #36332F; --hair: rgba(237, 233, 227, .09);
+  --moss: #2F6A4C; --on-ink: #151413; --glass: rgba(18, 17, 16, .78); --shadow-rgb: 0 0 0; --grain: .045;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+body {
+  background: var(--stone); color: var(--ink);
+  font-family: var(--sans); font-size: 16px; line-height: 1.6; font-weight: 400;
+  -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+  overflow-x: clip;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 70; background: var(--stone); }
+body::after {
+  content: ""; position: fixed; inset: 0; z-index: 300; pointer-events: none; opacity: var(--grain);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+::selection { background: var(--ink); color: var(--on-ink); }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; margin: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+a { color: inherit; }
+:focus-visible { outline: 1.5px solid var(--ink); outline-offset: 3px; }
+.vh { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.wrap { max-width: 1440px; margin: 0 auto; padding-left: var(--gl); padding-right: var(--gr); }
+em { font-style: italic; }
+
+.eyebrow {
+  display: inline-flex; align-items: center; gap: .9em; margin: 0;
+  font: 400 10.5px/1.2 var(--sans); letter-spacing: .34em; text-transform: uppercase; color: var(--muted);
+}
+.pip { width: 4px; height: 4px; border-radius: 50%; background: var(--rule); }
+.h2 {
+  font-family: var(--display); font-weight: 300; margin: 0;
+  font-size: clamp(2.6rem, 6vw, 5.6rem); line-height: .96; letter-spacing: -.012em; text-wrap: balance;
+}
+.h2 em { font-weight: 300; }
+
+/* ───── buttons ───── */
+.btn {
+  position: relative; display: inline-flex; align-items: center; justify-content: center; gap: .8em;
+  height: 46px; padding: 0 24px; border-radius: 999px; border: 1px solid transparent; white-space: nowrap;
+  font: 500 10.5px/1 var(--sans); letter-spacing: .26em; text-transform: uppercase;
+  transition: background-color .35s var(--ease), color .35s var(--ease), border-color .35s var(--ease), translate .5s var(--expo), opacity .3s;
+}
+.btn svg { width: 12px; height: 12px; flex: none; transition: transform .45s var(--expo); }
+.btn:hover svg.arr { transform: translateX(4px); }
+.btn-ink { background: var(--ink); color: var(--on-ink); }
+.btn-ink:hover { background: color-mix(in srgb, var(--ink) 86%, var(--muted)); }
+.btn-line { border-color: var(--rule); color: var(--ink); }
+.btn-line:hover { border-color: var(--ink); }
+.btn:active { scale: .97; }
+.icon-btn {
+  position: relative; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%;
+  color: var(--ink); transition: background-color .3s;
+}
+.icon-btn:hover { background: var(--hair); }
+.icon-btn svg { width: 18px; height: 18px; }
+kbd {
+  display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 5px;
+  border: 1px solid var(--rule); font: 500 10px/1 var(--sans); color: var(--ink-2); background: var(--paper);
+}
+
+/* ───── the mark: three panels, top · bottom · shoes ───── */
+.mark { display: inline-flex; align-items: center; gap: 3px; }
+.mark i { position: relative; display: block; width: 7px; height: 13px; border: 1px solid currentColor; border-radius: 1.5px; overflow: hidden; opacity: .8; }
+.mark i:nth-child(2) { height: 18px; }
+.mark i::after { content: ""; position: absolute; inset: 0; background: currentColor; transform-origin: bottom; transform: scaleY(var(--f, 0)); opacity: .85; }
+
+/* ───── nav ───── */
+.nav {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 60;
+  background: var(--glass); -webkit-backdrop-filter: blur(16px) saturate(1.3); backdrop-filter: blur(16px) saturate(1.3);
+  border-bottom: 1px solid transparent; transition: border-color .4s;
+}
+.nav.is-scrolled { border-bottom-color: var(--hair); }
+.nav-in { display: flex; align-items: center; gap: 24px; height: var(--nav-h); max-width: 1440px; margin: 0 auto; padding-left: var(--gl); padding-right: var(--gr); }
+.brand { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; color: var(--ink); }
+.wm { font-family: var(--display); font-size: 26px; font-weight: 400; letter-spacing: .04em; line-height: 1; }
+.wm em { font-weight: 300; }
+.nav-links { display: flex; gap: 30px; margin-left: auto; }
+.nav-links a { position: relative; font: 500 10.5px/1 var(--sans); letter-spacing: .26em; text-transform: uppercase; color: var(--ink-2); text-decoration: none; padding: 8px 0; }
+.nav-links a::after { content: ""; position: absolute; left: 0; right: 0; bottom: 2px; height: 1px; background: currentColor; transform: scaleX(0); transform-origin: right; transition: transform .5s var(--expo); }
+.nav-links a:hover::after { transform: scaleX(1); transform-origin: left; }
+.nav-actions { display: flex; align-items: center; gap: 4px; }
+.nav-links + .nav-actions { margin-left: 18px; }
+.snd .eq { display: flex; align-items: center; gap: 2px; height: 14px; }
+.snd .eq i { display: block; width: 2px; height: 4px; border-radius: 1px; background: currentColor; transition: height .3s; }
+.snd[aria-pressed="true"] .eq i { animation: eq 1s var(--ease) infinite alternate; }
+.snd[aria-pressed="true"] .eq i:nth-child(2) { animation-delay: -.4s; }
+.snd[aria-pressed="true"] .eq i:nth-child(3) { animation-delay: -.7s; }
+@keyframes eq { from { height: 3px; } to { height: 14px; } }
+.bag-n {
+  position: absolute; top: 4px; right: 3px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px;
+  background: var(--ink); color: var(--on-ink); font: 600 9px/16px var(--sans); text-align: center;
+  transform: scale(0); transition: transform .5s var(--expo);
+}
+.bag-n.on { transform: scale(1); }
+.bag-n.pop { animation: pop .6s var(--expo); }
+@keyframes pop { 0% { transform: scale(1); } 35% { transform: scale(1.5); } 100% { transform: scale(1); } }
+.nav-cta { margin-left: 8px; height: 40px; padding: 0 20px; }
+
+/* ───── hero ───── */
+.hero { position: relative; }
+.hero-head {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: end; gap: 24px 48px;
+  max-width: 1440px; margin: 0 auto; padding: clamp(18px, 2.4vw, 30px) var(--gr) clamp(16px, 1.8vw, 22px) var(--gl);
+}
+.hero-head h1 {
+  font-family: var(--display); font-weight: 300; margin: 14px 0 0;
+  font-size: clamp(2.1rem, 3.7vw, 3.5rem); line-height: .98; letter-spacing: -.01em; text-wrap: balance;
+}
+.hh-side { display: grid; gap: 12px; justify-items: start; max-width: 680px; justify-self: end; }
+.lede { margin: 0; color: var(--ink-2); font-size: 15px; line-height: 1.65; text-wrap: pretty; }
+.hint { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 0; font: 500 10px/1 var(--sans); letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
+.hint span { display: inline-flex; align-items: center; gap: 6px; }
+.hint .k-only { display: inline-flex; }
+
+.bands { display: grid; gap: 10px; max-width: 1440px; margin: 0 auto; padding-left: var(--gl); padding-right: var(--gr); }
+.band {
+  --bh: clamp(172px, 22svh, 252px);
+  --pad: clamp(18px, 2.4vw, 34px);
+  position: relative; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.32fr) minmax(0, .9fr);
+  height: var(--bh); background: var(--paper); border-radius: 20px;
+  box-shadow: 0 1px 2px rgb(var(--shadow-rgb) / .04), 0 18px 40px -28px rgb(var(--shadow-rgb) / .28);
+  touch-action: pan-y; user-select: none; -webkit-user-select: none;
+  transition: box-shadow .5s var(--ease), scale .5s var(--expo);
+  animation: bandIn 1.1s var(--expo) both; animation-delay: calc(var(--i) * 110ms + 60ms);
+}
+.band:hover { box-shadow: 0 1px 2px rgb(var(--shadow-rgb) / .05), 0 26px 60px -30px rgb(var(--shadow-rgb) / .38); }
+.band.is-drag { scale: .996; }
+.band:focus-visible { outline-offset: 4px; border-radius: 20px; }
+@keyframes bandIn { from { opacity: 0; transform: translateY(28px); } }
+/* hinges between the panels, as on a painted triptych */
+.band:not(:last-child)::before, .band:not(:last-child)::after {
+  content: ""; position: absolute; bottom: -8px; z-index: 3; width: 24px; height: 6px; border-radius: 3px;
+  background: var(--rule); box-shadow: inset 0 -1px 0 rgb(var(--shadow-rgb) / .12);
+}
+.band::before { left: 9%; }
+.band::after { right: 9%; }
+
+.band-word { display: flex; flex-direction: column; justify-content: space-between; padding: 20px 0 10px var(--pad); min-width: 0; }
+.band-label { display: flex; align-items: center; gap: 12px; margin: 0; font: 500 10px/1 var(--sans); letter-spacing: .3em; text-transform: uppercase; color: var(--muted); }
+.band-label .rn { font-family: var(--display); font-size: 16px; font-style: italic; letter-spacing: .06em; color: var(--ink); }
+.band-label .cnt { color: var(--faint); letter-spacing: .14em; }
+.band-big {
+  margin: 0; font-family: var(--display); font-weight: 300; white-space: nowrap;
+  font-size: clamp(3.2rem, 7vw, 8.2rem); line-height: .8; letter-spacing: -.015em;
+  will-change: transform; padding-bottom: .1em;
+}
+.band-big i { font-style: italic; }
+.band-big span { color: var(--faint); }
+.band-big > span.in { display: inline-block; }
+.band-big { animation: wordIn 1.2s var(--expo) both; animation-delay: calc(var(--i) * 110ms + 220ms); }
+@keyframes wordIn { from { opacity: 0; transform: translateY(.25em); } }
+
+.band-stage {
+  position: relative; overflow: hidden; min-width: 0;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 13%, #000 87%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 13%, #000 87%, transparent);
+}
+.slot {
+  --gs: calc(var(--bh) * .95);
+  position: absolute; left: 50%; top: 50%; width: var(--gs); height: var(--gs);
+  margin: calc(var(--gs) / -2) 0 0 calc(var(--gs) / -2); will-change: transform, opacity; pointer-events: none;
+}
+.flat { display: block; width: 100%; height: 100%; overflow: visible; transition: --g .7s var(--ease), --l .7s var(--ease); }
+.slot .flat { filter: drop-shadow(0 12px 14px rgb(var(--shadow-rgb) / .13)); }
+.flat .fill { fill: var(--g); }
+.flat .edge { fill: none; stroke: var(--l); stroke-width: 1.25; stroke-linejoin: round; }
+.flat .inner { fill: color-mix(in oklab, var(--g) 68%, #000); stroke: var(--l); stroke-width: 1.1; stroke-linejoin: round; }
+.flat .tone { fill: color-mix(in oklab, var(--g) 88%, #000); stroke: var(--l); stroke-width: 1.1; stroke-linejoin: round; }
+.flat .tone2 { fill: color-mix(in oklab, var(--g) 94%, #fff); stroke: var(--l); stroke-width: 1.1; stroke-linejoin: round; }
+.flat .light { fill: color-mix(in oklab, var(--g) 72%, #fff); stroke: var(--l); stroke-width: 1.1; stroke-linejoin: round; }
+.flat .loop { fill: var(--g); stroke: var(--l); stroke-width: 1; }
+.flat .sole { fill: color-mix(in oklab, var(--g) 42%, #1b1714); stroke: color-mix(in oklab, var(--l) 60%, #000); stroke-width: 1; }
+.flat .heel { fill: color-mix(in oklab, var(--g) 30%, #120f0d); stroke: color-mix(in oklab, var(--l) 60%, #000); stroke-width: 1; }
+.flat .rubber { fill: #EEEAE3; stroke: #A79E91; stroke-width: 1.1; }
+.flat .jute { fill: #CDB98F; stroke: #9B8760; stroke-width: 1; }
+.flat .metal { fill: #C4AC7C; stroke: #8C7444; stroke-width: .8; }
+.flat .button { fill: color-mix(in oklab, var(--g) 70%, #000); stroke: var(--l); stroke-width: .8; }
+.flat .eyelet { fill: color-mix(in oklab, var(--g) 40%, #000); stroke: none; }
+.flat .aglet { fill: var(--l); }
+.flat .seam { fill: none; stroke: var(--l); stroke-width: 1; opacity: .7; stroke-linecap: round; }
+.flat .crease { fill: none; stroke: var(--l); stroke-width: 1; opacity: .32; stroke-linecap: round; }
+.flat .stitch { fill: none; stroke: var(--l); stroke-width: .9; stroke-dasharray: 2.4 2; opacity: .75; }
+.flat .top { fill: none; stroke: #D2A35A; stroke-width: 1; stroke-dasharray: 2.4 2; opacity: .95; }
+.flat .fold { fill: none; stroke: var(--l); stroke-width: 1; opacity: .2; stroke-linecap: round; }
+.flat .hi { fill: none; stroke: #fff; stroke-width: 2.6; opacity: .2; stroke-linecap: round; }
+.flat .cord { fill: none; stroke: var(--l); stroke-width: 1.6; stroke-linecap: round; }
+.flat .lace { fill: none; stroke: color-mix(in oklab, var(--g) 25%, #fff); stroke-width: 1.7; stroke-linecap: round; }
+.flat .stripe { fill: none; stroke: color-mix(in oklab, var(--g) 55%, #1C1C1C); stroke-width: 2.2; }
+.flat .shadowed { fill: #000; fill-opacity: .16; }
+
+.band-meta { position: relative; display: flex; flex-direction: column; justify-content: center; gap: 10px; padding: 16px var(--pad) 16px 6px; min-width: 0; }
+.pm-top { display: flex; align-items: center; gap: 10px; }
+.pm-arrow { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--rule); color: var(--ink); transition: border-color .3s, background-color .3s; }
+.pm-arrow:hover { border-color: var(--ink); }
+.pm-arrow svg { width: 12px; height: 12px; }
+.pm-count { font: 500 10.5px/1 var(--sans); letter-spacing: .16em; color: var(--muted); font-variant-numeric: tabular-nums; }
+.pm-count b { color: var(--ink); font-weight: 600; }
+.pm-id { min-width: 0; }
+.pm-name { margin: 0; font-family: var(--display); font-weight: 400; font-size: clamp(1.25rem, 1.65vw, 1.7rem); line-height: 1.08; text-wrap: balance; }
+.pm-sub { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin: 5px 0 0; font-size: 13px; color: var(--muted); }
+.pm-price { font: 600 13.5px/1 var(--sans); color: var(--ink); letter-spacing: .03em; font-variant-numeric: tabular-nums; }
+.pm-swap { animation: none; }
+.pm-swap.in { animation: metaIn .5s var(--expo) both; }
+@keyframes metaIn { from { opacity: 0; transform: translateY(8px); filter: blur(3px); } }
+.pm-swatches { display: flex; flex-wrap: wrap; gap: 7px; padding: 3px 0 0 3px; }
+.sw { position: relative; width: 19px; height: 19px; border-radius: 50%; background: var(--c); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .14); transition: transform .4s var(--expo); }
+.sw:hover { transform: scale(1.15); }
+.sw::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; border: 1px solid var(--ink); transform: scale(.6); opacity: 0; transition: transform .45s var(--expo), opacity .3s; }
+.sw[aria-checked="true"]::after { transform: scale(1); opacity: 1; }
+.pm-sizes { display: flex; flex-wrap: wrap; gap: 4px; }
+.sz {
+  min-width: 30px; height: 24px; padding: 0 7px; border-radius: 999px; border: 1px solid var(--hair);
+  font: 600 9.5px/1 var(--sans); letter-spacing: .06em; color: var(--ink-2); font-variant-numeric: tabular-nums;
+  transition: background-color .3s, color .3s, border-color .3s;
+}
+.sz:hover:not(:disabled) { border-color: var(--ink); }
+.sz[aria-checked="true"] { background: var(--ink); border-color: var(--ink); color: var(--on-ink); }
+.sz:disabled { color: var(--faint); text-decoration: line-through; cursor: not-allowed; }
+.is-spinning .band-meta .pm-swap, .is-spinning .band-meta .pm-swatches, .is-spinning .band-meta .pm-sizes { opacity: .35; transition: opacity .2s; }
+
+/* the look bar */
+.lookbar {
+  position: sticky; bottom: 0; z-index: 30; margin-top: 10px;
+  background: var(--glass); -webkit-backdrop-filter: blur(18px) saturate(1.3); backdrop-filter: blur(18px) saturate(1.3);
+  border-top: 1px solid var(--hair); padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.lb-in {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; align-items: center; gap: 14px clamp(18px, 2.6vw, 40px);
+  max-width: 1440px; margin: 0 auto; padding-block: 14px; padding-left: var(--gl); padding-right: var(--gr);
+}
+.lb-k { margin: 0 0 3px; font: 500 9.5px/1 var(--sans); letter-spacing: .3em; text-transform: uppercase; color: var(--muted); }
+.lb-look { min-width: 0; }
+.lb-pieces { margin: 0; font-family: var(--display); font-style: italic; font-size: 1.2rem; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: opacity .3s; }
+.is-spinning-all .lb-pieces { opacity: .35; }
+.lb-no { display: grid; gap: 3px; text-decoration: none; color: var(--ink); }
+.lb-no .v { font-family: var(--display); font-size: 1.35rem; line-height: 1.1; font-variant-numeric: lining-nums; display: inline-flex; align-items: baseline; gap: 6px; }
+.lb-no .v small { font: 500 10px/1 var(--sans); letter-spacing: .12em; color: var(--muted); }
+.lb-no .v svg { width: 11px; height: 11px; align-self: center; transition: transform .45s var(--expo); }
+.lb-no:hover .v svg { transform: translateY(3px); }
+.lb-sum { margin: 0; font-family: var(--display); font-size: 2rem; line-height: 1; font-variant-numeric: lining-nums; display: flex; align-items: baseline; }
+.lb-actions { display: flex; gap: 8px; }
+#add { min-width: 170px; }
+#add.is-added { background: var(--moss); color: #fff; }
+#add .ck { display: none; }
+#add.is-added .ck { display: block; }
+
+/* odometer */
+.odo { display: inline-block; white-space: nowrap; font-variant-numeric: lining-nums tabular-nums; }
+.od-d, .od-p { display: inline-block; height: 1.12em; line-height: 1.12em; vertical-align: bottom; }
+.od-d { overflow: hidden; }
+.od-s { display: block; transition: transform .9s var(--expo); }
+.od-s span { display: block; height: 1.12em; }
+.od-now .od-s { transition: none !important; }
+.h2 .od-d, .lb-sum .od-d { margin-right: -.045em; }
+
+/* ───── ticker ───── */
+.ticker { overflow: hidden; padding-block: clamp(30px, 5vw, 56px); margin-top: clamp(40px, 6vw, 80px); border-block: 1px solid var(--hair); }
+.ticker-track {
+  display: flex; width: max-content; gap: .42em; will-change: transform;
+  font-family: var(--display); font-weight: 300; font-size: clamp(2.8rem, 7.4vw, 6.8rem); line-height: 1; white-space: nowrap;
+}
+.ticker-track em { font-weight: 300; }
+.ticker-track b { font-weight: 300; color: var(--faint); }
+.ticker-track .num { font-variant-numeric: lining-nums; }
+
+/* ───── how it works ───── */
+.how { position: relative; height: 340vh; }
+.how-pin {
+  position: sticky; top: var(--top); height: calc(100svh - var(--top)); overflow: clip;
+  display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); align-items: center; gap: 24px;
+  max-width: 1440px; margin: 0 auto; padding-left: var(--gl); padding-right: var(--gr);
+}
+.how-copy { display: grid; gap: clamp(20px, 3vh, 34px); max-width: 520px; position: relative; z-index: 2; }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: clamp(14px, 2.4vh, 24px); }
+.step { display: grid; grid-template-columns: 50px minmax(0, 1fr); gap: 10px; opacity: .32; transition: opacity .6s var(--ease); }
+.step.is-on { opacity: 1; }
+.st-n { font-family: var(--display); font-style: italic; font-size: 1.5rem; line-height: 1.3; color: var(--muted); }
+.step h3 { margin: 0 0 4px; font-family: var(--display); font-weight: 400; font-size: clamp(1.7rem, 2.4vw, 2.2rem); line-height: 1.05; }
+.step p { margin: 0; color: var(--ink-2); font-size: 15px; line-height: 1.6; max-width: 44ch; }
+.how-meter { display: flex; gap: 6px; }
+.how-meter i { position: relative; flex: 1; height: 2px; background: var(--rule); overflow: hidden; }
+.how-meter i::after { content: ""; position: absolute; inset: 0; background: var(--ink); transform-origin: left; transform: scaleX(var(--f, 0)); }
+
+.how-stage { position: relative; height: 100%; min-width: 0; perspective: 2400px; perspective-origin: 50% 45%; }
+.phone-scale { position: absolute; left: 50%; top: 50%; width: 390px; height: 844px; margin: -422px 0 0 -195px; transform: scale(var(--ps, .6)); transform-style: preserve-3d; }
+.phone {
+  --e: 0; position: relative; width: 390px; height: 844px; transform-style: preserve-3d;
+  transform: translateX(calc(var(--e) * var(--shift, 0px))) rotateX(calc(var(--e) * 54deg + var(--rx, 0) * 1deg)) rotateZ(calc(var(--e) * -36deg)) rotateY(calc(var(--ry, 0) * 1deg)) scale(calc(1 - var(--e) * .14));
+  font-family: var(--sans); color: #1C1C1C;
+}
+.ph-layer { position: absolute; transform-style: preserve-3d; transform: translate3d(0, calc(var(--e) * var(--dy, 0) * 1px), calc(var(--e) * var(--dz, 0) * 1px)); }
+.ph-chassis { inset: -13px; border-radius: 58px; background: #171615; box-shadow: 0 60px 120px -40px rgb(0 0 0 / .5), inset 0 0 0 1.5px #34312d, inset 0 0 0 4px #0b0a0a; }
+.ph-screen { inset: 0; border-radius: 46px; background: #F2EFEA; }
+.ph-head { top: 0; left: 0; right: 0; height: 150px; padding: 14px 24px 0; }
+.ph-status { position: relative; display: flex; justify-content: space-between; align-items: center; height: 34px; padding: 0 12px; font: 600 15px/1 var(--sans); }
+.ph-island { position: absolute; left: 50%; top: 0; width: 118px; height: 34px; margin-left: -59px; border-radius: 20px; background: #0b0a0a; }
+.ph-sig { display: flex; gap: 3px; align-items: flex-end; }
+.ph-sig i { display: block; width: 4px; border-radius: 1px; background: #1C1C1C; }
+.ph-greet { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
+.ph-hello { margin: 0; font-family: var(--display); font-size: 36px; line-height: 1; }
+.ph-sub { margin: 4px 0 0; font: 400 10px/1 var(--sans); letter-spacing: .32em; text-transform: uppercase; color: #8A8680; }
+.ph-icons { display: flex; gap: 8px; }
+.ph-icons span { position: relative; display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; background: #FBFAF8; box-shadow: 0 4px 14px rgb(0 0 0 / .06); }
+.ph-icons svg { width: 18px; height: 18px; }
+.ph-badge { position: absolute; top: 2px; right: 2px; width: 16px; height: 16px; border-radius: 50%; background: #1A3D2E; color: #fff; font: 600 9px/16px var(--sans); text-align: center; transform: scale(0); transition: transform .5s var(--expo); }
+.ph-badge.on { transform: scale(1); }
+.ph-chips { display: flex; gap: 6px; margin-top: 14px; }
+.ph-chips span { padding: 7px 11px; border-radius: 999px; border: 1px solid rgba(28, 28, 28, .1); font: 500 10px/1 var(--sans); letter-spacing: .14em; text-transform: uppercase; color: #4A4744; transition: background-color .35s, color .35s; }
+.ph-chips span.on { background: #1C1C1C; color: #fff; border-color: #1C1C1C; }
+.ph-band { left: 12px; right: 12px; }
+.ph-band[data-k="tops"] { top: 160px; height: 236px; }
+.ph-band[data-k="bottoms"] { top: 404px; height: 248px; }
+.ph-band[data-k="shoes"] { top: 660px; height: 108px; }
+.ph-clip { position: absolute; inset: 0; border-radius: 26px; overflow: hidden; background: #F9F9F9; box-shadow: 0 1px 0 rgb(0 0 0 / .03), 0 14px 30px -20px rgb(0 0 0 / .3); }
+.ph-slot { position: absolute; left: 50%; top: 50%; }
+.ph-band[data-k="tops"] .ph-slot { width: 196px; height: 196px; margin: -88px 0 0 -98px; }
+.ph-band[data-k="bottoms"] .ph-slot { width: 212px; height: 212px; margin: -96px 0 0 -106px; }
+.ph-band[data-k="shoes"] .ph-slot { width: 138px; height: 138px; margin: -66px 0 0 -40px; }
+.ph-name { position: absolute; left: 16px; top: 14px; margin: 0; font: 500 11px/1.3 var(--sans); color: #4A4744; }
+.ph-name b { display: block; font-weight: 600; color: #1C1C1C; }
+.ph-dots { position: absolute; left: 50%; bottom: 10px; display: flex; gap: 5px; transform: translateX(-50%); }
+.ph-dots i { width: 5px; height: 5px; border-radius: 50%; background: rgb(28 28 28 / .18); transition: width .4s var(--expo), background-color .3s; }
+.ph-dots i.on { width: 14px; border-radius: 3px; background: #1C1C1C; }
+.ph-tag {
+  position: absolute; left: calc(100% + 54px); top: 50%; display: flex; align-items: center; gap: 12px; white-space: nowrap;
+  transform: translateY(-50%); opacity: calc(var(--e) * 1.4 - .3); color: var(--ink);
+  font: 400 22px/1.2 var(--sans); letter-spacing: .02em;
+}
+.ph-tag::before { content: ""; position: absolute; right: calc(100% + 10px); top: 50%; width: 44px; height: 1px; background: currentColor; opacity: .5; }
+.ph-tag b { font-family: var(--display); font-weight: 400; font-style: italic; font-size: 34px; }
+.ph-bar { top: 778px; left: 12px; right: 12px; height: 56px; display: flex; align-items: center; justify-content: space-between; padding: 0 7px 0 22px; border-radius: 28px; background: #FFFFFF; box-shadow: 0 12px 30px -16px rgb(0 0 0 / .35); }
+.ph-k { margin: 0; font: 500 9px/1 var(--sans); letter-spacing: .3em; text-transform: uppercase; color: #8A8680; }
+.ph-total { margin: 3px 0 0; font-family: var(--display); font-size: 25px; line-height: 1; font-variant-numeric: lining-nums; }
+.ph-add { display: inline-flex; align-items: center; gap: 8px; height: 42px; padding: 0 20px; border-radius: 21px; background: #1C1C1C; color: #fff; font: 500 11px/1 var(--sans); letter-spacing: .22em; text-transform: uppercase; transition: background-color .45s var(--ease); }
+.ph-add.on { background: #1A3D2E; }
+.ph-tryon { position: absolute; right: 14px; bottom: 70px; display: flex; align-items: center; gap: 8px; padding: 9px 14px; border-radius: 999px; background: #1C1C1C; color: #fff; font: 500 10px/1 var(--sans); letter-spacing: .2em; text-transform: uppercase; opacity: 0; transform: translateY(10px); transition: opacity .5s, transform .6s var(--expo); }
+.ph-tryon.on { opacity: 1; transform: none; }
+
+/* ───── every look ───── */
+.looks { padding-block: clamp(90px, 13vw, 170px) clamp(60px, 8vw, 110px); }
+.looks-head { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 24px 56px; align-items: end; }
+.looks-head .h2 { margin-top: 18px; }
+.looks-lede { margin: 0; color: var(--ink-2); max-width: 52ch; font-size: 15.5px; text-wrap: pretty; }
+.occ-row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px 28px; margin-top: clamp(36px, 5vw, 56px); padding-block: 16px; border-block: 1px solid var(--hair); }
+.occ { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  height: 34px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--rule);
+  font: 500 10px/1 var(--sans); letter-spacing: .24em; text-transform: uppercase; color: var(--ink-2);
+  transition: background-color .3s, color .3s, border-color .3s;
+}
+.chip:hover { border-color: var(--ink); }
+.chip[aria-checked="true"] { background: var(--ink); color: var(--on-ink); border-color: var(--ink); }
+.eq { display: flex; flex-wrap: wrap; align-items: baseline; gap: .1em .38em; margin: 0; font-family: var(--display); font-size: clamp(1.1rem, 1.6vw, 1.45rem); color: var(--muted); }
+.eq .odo { color: var(--ink); font-weight: 500; }
+.eq .op { color: var(--faint); }
+.loom { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: clamp(20px, 3vw, 44px); align-items: start; margin-top: 26px; }
+.loom-fig { margin: 0; min-width: 0; }
+.loom-canvas { position: relative; touch-action: manipulation; overflow: clip; }
+#loom { display: block; width: 100%; height: auto; image-rendering: pixelated; border-radius: 3px; }
+#loom-hi { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.loom-full { position: absolute; left: calc(230 / 876 * 100%); top: calc(424 / 443 * 100%); height: calc(19 / 443 * 100%); display: flex; align-items: center; gap: 10px; font: 500 9.5px/1 var(--sans); letter-spacing: .22em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+.loom-full::before { content: ""; width: 20px; height: 1px; background: currentColor; opacity: .6; }
+.loom-fig figcaption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 20px; margin-top: 14px; font-size: 12.5px; color: var(--muted); }
+.loom-tip {
+  position: absolute; left: 0; top: 0; z-index: 5; width: 236px; padding: 12px; border-radius: 14px; pointer-events: none;
+  background: var(--paper); border: 1px solid var(--hair); box-shadow: 0 20px 40px -18px rgb(var(--shadow-rgb) / .4);
+  font-size: 12px; line-height: 1.35; transition: opacity .15s;
+}
+.tip-row { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 3px 0; }
+.tip-row i { width: 12px; height: 12px; border-radius: 3px; background: var(--c); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .12); }
+.tip-row span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--ink-2); }
+.tip-row b { font-weight: 600; font-variant-numeric: tabular-nums; }
+.tip-no { display: flex; justify-content: space-between; margin-bottom: 6px; font: 500 9.5px/1.2 var(--sans); letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
+.tip-no b { color: var(--ink); letter-spacing: .06em; }
+
+.look-card { position: sticky; top: calc(var(--top) + 20px); display: grid; gap: 16px; padding: 22px; border-radius: 22px; background: var(--paper); box-shadow: 0 1px 2px rgb(var(--shadow-rgb) / .04), 0 24px 50px -32px rgb(var(--shadow-rgb) / .35); }
+.lc-head { display: flex; justify-content: space-between; align-items: baseline; }
+.lc-no { margin: 0; font-family: var(--display); font-size: 1.6rem; line-height: 1; font-variant-numeric: lining-nums; }
+.lc-no small { font: 500 9.5px/1 var(--sans); letter-spacing: .26em; text-transform: uppercase; color: var(--muted); margin-right: 6px; }
+.lc-panels { display: grid; grid-template-columns: 1fr 1.12fr 1fr; align-items: end; gap: 6px; height: 132px; }
+.lc-panels i { display: block; height: 76%; border-radius: 8px; background: var(--c, var(--paper-2)); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .08); transition: background-color .6s var(--ease); }
+.lc-panels i:nth-child(2) { height: 100%; }
+.lc-panels i.none { background: repeating-linear-gradient(135deg, transparent 0 6px, var(--hair) 6px 7px); box-shadow: inset 0 0 0 1px var(--hair); }
+.lc-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.lc-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; }
+.lc-role { grid-column: 1 / -1; font: 500 9px/1 var(--sans); letter-spacing: .28em; text-transform: uppercase; color: var(--muted); }
+.lc-name { font-family: var(--display); font-size: 1.12rem; line-height: 1.2; min-width: 0; }
+.lc-name small { display: block; font: 400 12px/1.3 var(--sans); color: var(--muted); }
+.lc-price { font: 600 12.5px/1.6 var(--sans); font-variant-numeric: tabular-nums; }
+.lc-total { display: flex; justify-content: space-between; align-items: baseline; margin: 0; padding-top: 14px; border-top: 1px solid var(--hair); font: 500 10px/1 var(--sans); letter-spacing: .26em; text-transform: uppercase; color: var(--muted); }
+.lc-total b { font-family: var(--display); font-weight: 400; font-size: 1.7rem; letter-spacing: 0; color: var(--ink); font-variant-numeric: lining-nums; }
+.lc-match { margin: 0; font-size: 12.5px; color: var(--muted); }
+.lc-match b { color: var(--ink-2); font-weight: 500; }
+
+/* ───── details ───── */
+.details { padding-block: clamp(70px, 10vw, 140px); }
+.det-grid { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.4fr); gap: 32px clamp(32px, 6vw, 96px); }
+.det-head { position: sticky; top: calc(var(--top) + 40px); align-self: start; display: grid; gap: 18px; }
+.det-head p:last-child { margin: 0; color: var(--ink-2); max-width: 34ch; }
+.det-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--hair); }
+.det { display: grid; grid-template-columns: minmax(0, 1fr) 168px; gap: 24px; align-items: center; padding: 26px 16px; border-bottom: 1px solid var(--hair); transition: background-color .45s var(--ease); }
+.det:hover { background: var(--paper); }
+.det h3 { margin: 0 0 6px; font-family: var(--display); font-weight: 400; font-size: clamp(1.5rem, 2.2vw, 2rem); line-height: 1.05; }
+.det p { margin: 0; color: var(--ink-2); font-size: 15px; max-width: 50ch; }
+.viz { height: 64px; display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+.viz * { animation-play-state: paused !important; }
+.det.is-live .viz * { animation-play-state: running !important; }
+.vz-sw { position: relative; display: flex; gap: 6px; }
+.vz-sw i { width: 16px; height: 16px; border-radius: 50%; background: var(--c); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .12); }
+.vz-sw::after { content: ""; position: absolute; left: -3px; top: -3px; width: 20px; height: 20px; border-radius: 50%; border: 1px solid var(--ink); animation: ring 6s var(--expo) infinite; }
+@keyframes ring { 0%, 16% { transform: translateX(0); } 20%, 36% { transform: translateX(22px); } 40%, 56% { transform: translateX(44px); } 60%, 76% { transform: translateX(66px); } 80%, 96% { transform: translateX(88px); } 100% { transform: translateX(0); } }
+.vz-sz { display: flex; flex-direction: column; gap: 3px; font: 600 9px/1 var(--sans); letter-spacing: .08em; color: var(--ink-2); }
+.vz-sz s { color: var(--faint); }
+.vz-chips { position: relative; display: flex; gap: 2px; padding: 3px; border-radius: 999px; border: 1px solid var(--rule); }
+.vz-chips span { position: relative; z-index: 1; padding: 6px 9px; font: 500 8.5px/1 var(--sans); letter-spacing: .16em; text-transform: uppercase; color: var(--ink-2); }
+.vz-chips::before { content: ""; position: absolute; top: 3px; bottom: 3px; left: 3px; width: 33%; border-radius: 999px; background: var(--ink); opacity: .12; animation: chip 5s var(--expo) infinite; }
+@keyframes chip { 0%, 28% { transform: translateX(0); } 33%, 61% { transform: translateX(100%); } 66%, 94% { transform: translateX(196%); } 100% { transform: translateX(0); } }
+.vz-total { font-family: var(--display); font-size: 1.9rem; line-height: 1; }
+.vz-bag { position: relative; width: 40px; height: 40px; display: grid; place-items: center; }
+.vz-bag svg { width: 30px; height: 30px; }
+.vz-bag b { position: absolute; top: 0; right: 0; min-width: 17px; height: 17px; border-radius: 9px; background: var(--moss); color: #fff; font: 600 9px/17px var(--sans); text-align: center; }
+.vz-bag i { position: absolute; left: 50%; top: -6px; width: 8px; height: 10px; margin-left: -4px; border-radius: 2px; background: var(--ink); opacity: 0; animation: drop 2.4s var(--ease) infinite; }
+@keyframes drop { 0% { transform: translateY(-14px); opacity: 0; } 30% { opacity: 1; } 55% { transform: translateY(14px); opacity: 0; } 100% { opacity: 0; } }
+.vz-link { display: inline-flex; align-items: center; gap: 8px; font: 500 9.5px/1 var(--sans); letter-spacing: .22em; text-transform: uppercase; color: var(--ink); padding-bottom: 4px; border-bottom: 1px solid var(--ink); }
+.vz-link svg { width: 12px; height: 12px; animation: out 2.4s var(--expo) infinite; }
+@keyframes out { 0%, 40% { transform: translate(0, 0); opacity: 1; } 60% { transform: translate(8px, -8px); opacity: 0; } 61% { transform: translate(-8px, 8px); opacity: 0; } 80%, 100% { transform: translate(0, 0); opacity: 1; } }
+.vz-try { position: relative; width: 50px; height: 64px; border-radius: 8px; border: 1px dashed var(--faint); overflow: hidden; }
+.vz-try svg { position: absolute; inset: 6px 8px 0; width: calc(100% - 16px); height: calc(100% - 6px); color: var(--muted); }
+.vz-try::after { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--ink); box-shadow: 0 0 10px 2px color-mix(in srgb, var(--ink) 30%, transparent); animation: scan 2.6s var(--ease) infinite alternate; }
+@keyframes scan { to { transform: translateY(62px); } }
+.vz-sync { display: flex; align-items: center; gap: 10px; font-family: var(--display); font-size: 1.7rem; line-height: 1; font-variant-numeric: lining-nums; }
+.vz-sync svg { width: 26px; height: 26px; animation: spin 4s linear infinite; color: var(--muted); }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ───── finale ───── */
+.finale { position: relative; padding-block: clamp(90px, 14vw, 190px) clamp(70px, 9vw, 120px); text-align: center; overflow: clip; }
+.fin-in { display: grid; justify-items: center; gap: 0; }
+.mark-xl { gap: 6px; color: var(--ink); }
+.mark-xl i { width: 14px; height: 26px; border-radius: 2px; }
+.mark-xl i:nth-child(2) { height: 36px; background: color-mix(in srgb, var(--ink) 8%, transparent); }
+.fin-wm { margin: 8px 0 .24em; font-family: var(--display); font-weight: 400; font-size: clamp(4.6rem, 20vw, 20rem); line-height: 1; letter-spacing: .01em; white-space: nowrap; }
+.fin-wm span { display: inline-block; transition: transform .7s var(--expo); }
+.fin-wm em { font-weight: 300; }
+.fin-tag { margin: 0 0 34px; font: 400 11px/1 var(--sans); letter-spacing: .38em; text-transform: uppercase; color: var(--muted); }
+.btn-xl { height: 58px; padding: 0 36px; font-size: 11.5px; }
+.fin-sub { margin: 22px 0 0; font: 400 9px/1 var(--sans); letter-spacing: .42em; text-transform: uppercase; color: var(--faint); }
+.foot { border-top: 1px solid var(--hair); padding-bottom: env(safe-area-inset-bottom, 0px); }
+.foot-in { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px 32px; padding-block: 26px; font-size: 12.5px; color: var(--muted); }
+.foot-in p { margin: 0; }
+.foot .wm { font-size: 20px; color: var(--ink); }
+
+/* ───── bag drawer ───── */
+.scrim { position: fixed; inset: 0; z-index: 110; background: rgb(0 0 0 / .3); opacity: 0; pointer-events: none; transition: opacity .45s var(--ease); }
+.scrim.open { opacity: 1; pointer-events: auto; }
+.drawer {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 120; width: min(420px, 100%); display: flex; flex-direction: column;
+  background: var(--paper); box-shadow: -30px 0 80px -40px rgb(0 0 0 / .4);
+  transform: translateX(104%); visibility: hidden; transition: transform .6s var(--expo), visibility 0s .6s;
+  padding: calc(18px + env(safe-area-inset-top, 0px)) max(22px, env(safe-area-inset-right, 0px)) calc(18px + env(safe-area-inset-bottom, 0px)) 22px;
+}
+.drawer.open { transform: none; visibility: visible; transition: transform .6s var(--expo); }
+.dr-head { display: flex; justify-content: space-between; align-items: center; padding-bottom: 14px; border-bottom: 1px solid var(--hair); }
+.dr-head h2 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 1.9rem; }
+.dr-body { flex: 1; overflow-y: auto; padding-block: 8px; }
+.dr-empty { margin: 32px 0; color: var(--muted); font-size: 14px; }
+.dr-item { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto 32px; gap: 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--hair); animation: metaIn .5s var(--expo) both; }
+.dr-item i { width: 34px; height: 34px; border-radius: 8px; background: var(--c); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .1); }
+.dr-item p { margin: 0; min-width: 0; font-family: var(--display); font-size: 1.1rem; line-height: 1.2; }
+.dr-item small { display: block; font: 400 12px/1.4 var(--sans); color: var(--muted); }
+.dr-item b { font: 600 13px/1 var(--sans); font-variant-numeric: tabular-nums; }
+.dr-item button { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; color: var(--muted); }
+.dr-item button:hover { color: var(--ink); background: var(--hair); }
+.dr-item button svg { width: 12px; height: 12px; }
+.dr-foot { display: grid; gap: 12px; padding-top: 16px; border-top: 1px solid var(--hair); }
+.dr-sub { display: flex; justify-content: space-between; align-items: baseline; margin: 0; font: 500 10px/1 var(--sans); letter-spacing: .26em; text-transform: uppercase; color: var(--muted); }
+.dr-sub b { font-family: var(--display); font-weight: 400; font-size: 1.8rem; letter-spacing: 0; color: var(--ink); }
+.dr-note { margin: 0; font-size: 12px; color: var(--muted); }
+
+/* ───── curtain + cursor ───── */
+.curtain { position: fixed; left: 0; top: 0; z-index: 500; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; background: #1C1C1C; transform: scale(0); pointer-events: none; }
+.curtain-word { position: fixed; inset: 0; z-index: 501; display: grid; place-content: center; justify-items: center; gap: 18px; color: #FBFAF8; pointer-events: none; opacity: 0; }
+.curtain-word .mark i { width: 10px; height: 18px; }
+.curtain-word .mark i:nth-child(2) { height: 26px; }
+.curtain-word p { margin: 0; font-family: var(--display); font-style: italic; font-weight: 300; font-size: clamp(2.6rem, 6vw, 4.4rem); line-height: 1; }
+.has-cursor, .has-cursor * { cursor: none !important; }
+.cursor { position: fixed; left: 0; top: 0; z-index: 450; pointer-events: none; }
+.cursor.is-hidden { opacity: 0; }
+.cur-dot, .cur-ring { position: absolute; left: 0; top: 0; will-change: transform; }
+.cur-dot i { display: block; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: var(--ink); transition: transform .3s var(--expo); }
+.cur-ring i {
+  display: grid; place-items: center; width: 34px; height: 34px; margin: -17px 0 0 -17px; border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--ink) 50%, transparent);
+  transition: width .45s var(--expo), height .45s var(--expo), margin .45s var(--expo), background-color .35s, border-color .35s;
+}
+.cur-ring span { font: 600 9px/1 var(--sans); letter-spacing: .22em; text-transform: uppercase; color: var(--on-ink); opacity: 0; transition: opacity .25s; white-space: nowrap; }
+.cursor.is-drag .cur-ring i { width: 84px; height: 84px; margin: -42px 0 0 -42px; background: var(--ink); border-color: var(--ink); }
+.cursor.is-drag .cur-ring span { opacity: 1; }
+.cursor.is-drag .cur-dot i { transform: scale(0); }
+.cursor.is-link .cur-ring i { width: 56px; height: 56px; margin: -28px 0 0 -28px; background: color-mix(in srgb, var(--ink) 7%, transparent); }
+.cursor.is-loom .cur-ring i { width: 18px; height: 18px; margin: -9px 0 0 -9px; }
+.cursor.is-down .cur-ring i { scale: .88; }
+
+/* ───── responsive ───── */
+@media (max-width: 1080px) {
+  .nav-links { display: none; }
+  .nav-actions, .nav-links + .nav-actions { margin-left: auto; }
+  .band { grid-template-columns: minmax(0, .95fr) minmax(0, 1.25fr) minmax(0, 1fr); }
+  .det-grid { grid-template-columns: minmax(0, 1fr); }
+  .det-head { position: static; }
+  .loom { grid-template-columns: minmax(0, 1fr); }
+  .look-card { position: static; grid-template-columns: minmax(0, 220px) minmax(0, 1fr); align-items: start; }
+  .look-card .lc-head, .look-card .lc-total, .look-card .lc-match, .look-card .lc-actions { grid-column: 1 / -1; }
+}
+@media (max-width: 760px) {
+  :root { --nav-h: 56px; }
+  .nav-cta { display: none; }
+  .wm { font-size: 23px; }
+  .hero-head { grid-template-columns: minmax(0, 1fr); }
+  .hh-side { justify-self: start; }
+  .hint .k-only { display: none; }
+  .band {
+    --bh: 196px; height: auto; grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "word" "stage" "meta";
+  }
+  .band-word { grid-area: word; flex-direction: row; align-items: baseline; justify-content: flex-start; gap: 14px; padding: 16px 120px 0 18px; }
+  .band-big { font-size: 2.5rem; line-height: 1; }
+  .band-stage { grid-area: stage; height: var(--bh); }
+  .band-meta { grid-area: meta; position: static; padding: 0 18px 18px; gap: 10px; }
+  .pm-top { position: absolute; top: 12px; right: 12px; }
+  .band-label .cnt { display: none; }
+  .pm-swatches { padding-left: 4px; }
+  .lb-in { grid-template-columns: minmax(0, 1fr) auto; padding-block: 12px; }
+  .lb-no { display: none; }
+  .lb-actions { grid-column: 1 / -1; }
+  .lb-actions .btn { flex: 1; }
+  #add { min-width: 0; }
+  .lb-sum { font-size: 1.7rem; }
+  .how { height: 300vh; }
+  .how-pin { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; gap: 0; }
+  .how-stage { order: 1; }
+  .how-copy { order: 2; padding-bottom: 18px; gap: 14px; }
+  .how-copy .h2 { font-size: 2.1rem; }
+  .how-copy .eyebrow { display: none; }
+  .steps { position: relative; min-height: 8.6em; }
+  .step { position: absolute; inset: 0 0 auto 0; opacity: 0; transform: translateY(10px); transition: opacity .45s, transform .6s var(--expo); }
+  .step.is-on { opacity: 1; transform: none; }
+  .step h3 { font-size: 1.6rem; }
+  .step p { font-size: 14px; }
+  .phone { --shift: -70px; }
+  .ph-tag { font-size: 26px; left: calc(100% + 30px); }
+  .ph-tag::before { width: 24px; }
+  .looks-head { grid-template-columns: minmax(0, 1fr); }
+  .occ-row { flex-direction: column; align-items: flex-start; }
+  .loom-full { font-size: 8px; letter-spacing: .14em; }
+  .lf-more { display: none; }
+  .look-card { grid-template-columns: minmax(0, 1fr); }
+  .det { grid-template-columns: minmax(0, 1fr); gap: 14px; padding-inline: 4px; }
+  .viz { justify-content: flex-start; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="g-shade" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".2"/>
+      <stop offset=".5" stop-color="#fff" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000" stop-opacity=".16"/>
+    </linearGradient>
+    <linearGradient id="g-sheen" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#fff" stop-opacity="0"/>
+      <stop offset=".22" stop-color="#fff" stop-opacity=".34"/>
+      <stop offset=".34" stop-color="#fff" stop-opacity="0"/>
+      <stop offset=".56" stop-color="#000" stop-opacity=".12"/>
+      <stop offset=".7" stop-color="#fff" stop-opacity=".26"/>
+      <stop offset=".8" stop-color="#fff" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000" stop-opacity=".14"/>
+    </linearGradient>
+    <pattern id="tx-twill" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(-38)">
+      <path d="M0 2.5H5" stroke="#000" stroke-opacity=".1" stroke-width="1.3"/>
+      <path d="M0 .4H5" stroke="#fff" stroke-opacity=".08" stroke-width=".8"/>
+    </pattern>
+    <pattern id="tx-linen" width="4" height="4" patternUnits="userSpaceOnUse">
+      <path d="M0 1H4M1 0V4" stroke="#000" stroke-opacity=".055" stroke-width=".8"/>
+      <path d="M0 3H4" stroke="#fff" stroke-opacity=".07" stroke-width=".6"/>
+    </pattern>
+    <pattern id="tx-rib" width="3.2" height="6" patternUnits="userSpaceOnUse">
+      <path d="M1 0V6" stroke="#000" stroke-opacity=".1" stroke-width="1"/>
+      <path d="M2.4 0V6" stroke="#fff" stroke-opacity=".08" stroke-width=".6"/>
+    </pattern>
+    <pattern id="tx-jute" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(55)">
+      <path d="M0 3H6" stroke="#6E5A33" stroke-opacity=".38" stroke-width="1.5"/>
+    </pattern>
+  </defs>
+</svg>
+
+<header class="nav" id="nav">
+  <div class="nav-in">
+    <a class="brand" href="#studio" aria-label="Triptych, back to the studio">
+      <span class="mark" id="nav-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span class="wm"><em>Trip</em>tych</span>
+    </a>
+    <nav class="nav-links" aria-label="Sections">
+      <a href="#how">How it works</a>
+      <a href="#looks">Every look</a>
+      <a href="#details">The studio</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="icon-btn snd" id="snd" type="button" aria-pressed="false" aria-label="Sound effects">
+        <span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>
+      </button>
+      <button class="icon-btn" id="bag-btn" type="button" aria-label="Open bag" aria-controls="drawer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 8h13l-1.1 12.2a1 1 0 0 1-1 .8H7.6a1 1 0 0 1-1-.8L5.5 8Z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/></svg>
+        <span class="bag-n" id="bag-n">0</span>
+      </button>
+      <button class="btn btn-ink nav-cta" type="button" data-enter data-magnetic>Enter Studio <svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+  <section class="hero" id="studio" aria-labelledby="hero-title">
+    <div class="hero-head">
+      <div>
+        <p class="eyebrow"><span class="pip"></span>Atelier · Est. 2026<span class="pip"></span></p>
+        <h1 id="hero-title"><span class="vh">Triptych. </span>Three panels. <em>One look.</em></h1>
+      </div>
+      <div class="hh-side">
+        <p class="lede">Triptych builds an outfit the way you'd lay one out on the bed: a top, a bottom and shoes, one panel each. Swipe a panel to change that piece. The rest of the look stays put.</p>
+        <p class="hint"><span>Drag a panel</span><span class="k-only"><kbd>←</kbd><kbd>→</kbd> browse</span><span class="k-only"><kbd>S</kbd> shuffle</span></p>
+      </div>
+    </div>
+
+    <div class="bands" id="bands">
+      <article class="band" data-band="tops" style="--i:0" tabindex="0" aria-roledescription="carousel" aria-label="Top panel. Use the arrow keys to change the top.">
+        <div class="band-word" data-cursor="drag">
+          <p class="band-label"><span class="rn">I</span>Top<span class="cnt"></span></p>
+          <p class="band-big" aria-hidden="true"><i>Swipe</i><span>.</span></p>
+        </div>
+        <div class="band-stage" data-cursor="drag"></div>
+        <div class="band-meta"></div>
+      </article>
+      <article class="band" data-band="bottoms" style="--i:1" tabindex="0" aria-roledescription="carousel" aria-label="Bottom panel. Use the arrow keys to change the bottom.">
+        <div class="band-word" data-cursor="drag">
+          <p class="band-label"><span class="rn">II</span>Bottom<span class="cnt"></span></p>
+          <p class="band-big" aria-hidden="true"><i>Stack</i><span>.</span></p>
+        </div>
+        <div class="band-stage" data-cursor="drag"></div>
+        <div class="band-meta"></div>
+      </article>
+      <article class="band" data-band="shoes" style="--i:2" tabindex="0" aria-roledescription="carousel" aria-label="Shoes panel. Use the arrow keys to change the shoes.">
+        <div class="band-word" data-cursor="drag">
+          <p class="band-label"><span class="rn">III</span>Shoes<span class="cnt"></span></p>
+          <p class="band-big" aria-hidden="true"><i>Slay</i><span>.</span></p>
+        </div>
+        <div class="band-stage" data-cursor="drag"></div>
+        <div class="band-meta"></div>
+      </article>
+    </div>
+
+    <div class="lookbar" id="lookbar">
+      <div class="lb-in">
+        <div class="lb-look">
+          <p class="lb-k">The look</p>
+          <p class="lb-pieces" id="lb-pieces" aria-live="polite"></p>
+        </div>
+        <a class="lb-no" href="#looks" id="lb-no">
+          <span class="lb-k">Find it in the cloth</span>
+          <span class="v">No. <span id="lb-no-n"></span> <small>of <span id="lb-of"></span></small><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg></span>
+        </a>
+        <div>
+          <p class="lb-k">Total</p>
+          <p class="lb-sum">₹<span class="odo" id="lb-total"></span></p>
+        </div>
+        <div class="lb-actions">
+          <button class="btn btn-line" id="shuffle" type="button" data-magnetic>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
+            Shuffle
+          </button>
+          <button class="btn btn-ink" id="add" type="button" data-magnetic>
+            <svg class="ck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+            <span id="add-l">Add outfit</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="ticker" aria-hidden="true">
+    <div class="ticker-track" id="ticker"></div>
+  </div>
+
+  <section class="how" id="how" aria-labelledby="how-title">
+    <div class="how-pin">
+      <div class="how-copy">
+        <p class="eyebrow"><span class="pip"></span>How it works</p>
+        <h2 class="h2" id="how-title">One screen. <em>Three panels.</em></h2>
+        <ol class="steps" id="steps">
+          <li class="step is-on"><span class="st-n">I</span><div><h3>Swipe</h3><p>Each panel moves on its own. Change the top and your jeans and shoes stay where they are, so you compare one piece at a time.</p></div></li>
+          <li class="step"><span class="st-n">II</span><div><h3>Stack</h3><p>Filter by department and occasion, then choose what feeds each panel: jeans, trousers or shorts under the top, or a dress for a full look.</p></div></li>
+          <li class="step"><span class="st-n">III</span><div><h3>Slay</h3><p>The bar at the bottom keeps a running total. Put all three pieces in your bag at once, open any of them on the retailer's site, or try the outfit on with AI.</p></div></li>
+        </ol>
+        <div class="how-meter" id="how-meter" aria-hidden="true"><i></i><i></i><i></i></div>
+      </div>
+      <div class="how-stage" id="how-stage" aria-hidden="true">
+        <div class="phone-scale"><div class="phone" id="phone"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="looks" id="looks" aria-labelledby="looks-title">
+    <div class="wrap">
+      <div class="looks-head">
+        <div>
+          <p class="eyebrow"><span class="pip"></span>The catalogue, woven</p>
+          <h2 class="h2" id="looks-title"><span class="odo" id="n-pieces"></span> pieces. <em><span class="odo" id="n-looks"></span> looks.</em></h2>
+        </div>
+        <p class="looks-lede">Every top meets every bottom and every pair of shoes. In the cloth below, each point is one complete outfit: a block for each of the 72 tops, bottoms running across it, shoes running down. Hover to read a look. Tap to pin it.</p>
+      </div>
+      <div class="occ-row">
+        <div class="occ" id="occ" role="radiogroup" aria-label="Occasion">
+          <button class="chip" type="button" role="radio" aria-checked="true" data-occ="all">All</button>
+          <button class="chip" type="button" role="radio" aria-checked="false" data-occ="casual">Casual</button>
+          <button class="chip" type="button" role="radio" aria-checked="false" data-occ="street">Street</button>
+          <button class="chip" type="button" role="radio" aria-checked="false" data-occ="formal">Formal</button>
+          <button class="chip" type="button" role="radio" aria-checked="false" data-occ="evening">Evening</button>
+        </div>
+        <p class="eq" id="eq">
+          <span class="odo" id="eq-t"></span> tops <span class="op">×</span>
+          <span class="odo" id="eq-b"></span> bottoms <span class="op">×</span>
+          <span class="odo" id="eq-s"></span> shoes <span class="op">+</span>
+          <span class="odo" id="eq-f"></span> full looks <span class="op">×</span>
+          <span class="odo" id="eq-s2"></span> shoes
+        </p>
+      </div>
+      <div class="loom">
+        <figure class="loom-fig">
+          <div class="loom-canvas" id="loom-wrap" data-cursor="loom">
+            <canvas id="loom" width="876" height="443" role="img" aria-label="A woven grid of every possible outfit in the catalogue. Each point's colour blends the top, bottom and shoes in that look."></canvas>
+            <canvas id="loom-hi" aria-hidden="true"></canvas>
+            <span class="loom-full" aria-hidden="true">Full looks<span class="lf-more">&nbsp;· a dress or one-piece with each pair of shoes</span></span>
+            <div class="loom-tip" id="loom-tip" hidden></div>
+          </div>
+          <figcaption><span>One point is one look. Blocks are tops, sorted by colour; across each block run the bottoms, and down it the shoes.</span><span>Faded points fall outside the occasion you picked.</span></figcaption>
+        </figure>
+        <aside class="look-card" id="look-card" aria-live="polite" aria-label="Pinned look"></aside>
+      </div>
+    </div>
+  </section>
+
+  <section class="details" id="details" aria-labelledby="det-title">
+    <div class="wrap det-grid">
+      <header class="det-head">
+        <p class="eyebrow"><span class="pip"></span>In the studio</p>
+        <h2 class="h2" id="det-title">Around the <em>three panels</em></h2>
+        <p>The panels do the styling. Everything else sits within a thumb's reach.</p>
+      </header>
+      <ul class="det-list">
+        <li class="det">
+          <div><h3>Colour and size</h3><p>Pick a colourway and the picture changes to match. Sizes that have sold out are struck through before you choose.</p></div>
+          <div class="viz" aria-hidden="true">
+            <span class="vz-sw"><i style="--c:#80AAD8"></i><i style="--c:#C0BBAD"></i><i style="--c:#6B333B"></i><i style="--c:#403C2D"></i><i style="--c:#272628"></i></span>
+            <span class="vz-sz"><s>XS</s><span>S · M</span><span>L · XL</span></span>
+          </div>
+        </li>
+        <li class="det">
+          <div><h3>Department and occasion</h3><p>Choose a department and an occasion, then decide which category feeds each panel.</p></div>
+          <div class="viz" aria-hidden="true"><span class="vz-chips"><span>Casual</span><span>Street</span><span>Evening</span></span></div>
+        </li>
+        <li class="det">
+          <div><h3>A running total</h3><p>The bar along the bottom adds up the look in rupees while you swipe, before anything reaches the bag.</p></div>
+          <div class="viz" aria-hidden="true"><span class="vz-total">₹<span class="odo" id="vz-total"></span></span></div>
+        </li>
+        <li class="det">
+          <div><h3>One bag for the whole look</h3><p>Add all three pieces in one tap. Take any of them out later, or clear the bag and start again.</p></div>
+          <div class="viz" aria-hidden="true"><span class="vz-bag"><i></i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"><path d="M5.5 8h13l-1.1 12.2a1 1 0 0 1-1 .8H7.6a1 1 0 0 1-1-.8L5.5 8Z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/></svg><b>3</b></span></div>
+        </li>
+        <li class="det">
+          <div><h3>Straight to the retailer</h3><p>Every piece opens on the retailer's own product page, in a new tab, with the colour you picked.</p></div>
+          <div class="viz" aria-hidden="true"><span class="vz-link">View on retailer <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg></span></div>
+        </li>
+        <li class="det">
+          <div><h3>Try it on</h3><p>Upload a photo of yourself and get an AI preview of you wearing the outfit.</p></div>
+          <div class="viz" aria-hidden="true"><span class="vz-try"><svg viewBox="0 0 34 58" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="17" cy="9" r="6"/><path d="M4 58V30c0-7 6-12 13-12s13 5 13 12v28"/></svg></span></div>
+        </li>
+        <li class="det">
+          <div><h3>A catalogue that keeps itself current</h3><p>Pieces are pulled in from the retailer's listings on a schedule, so nobody loads products by hand.</p></div>
+          <div class="viz" aria-hidden="true"><span class="vz-sync"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 0 1-14 5.3M4 12a8 8 0 0 1 14-5.3"/><path d="M18 3v4h-4M6 21v-4h4"/></svg>523</span></div>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="finale" id="enter" aria-label="Enter the studio">
+    <div class="wrap fin-in" id="fin">
+      <span class="mark mark-xl" aria-hidden="true"><i></i><i></i><i></i></span>
+      <p class="fin-wm" id="fin-wm" aria-label="Triptych"><em>Trip</em>tych</p>
+      <p class="fin-tag">Swipe. Stack. Slay.</p>
+      <button class="btn btn-ink btn-xl" type="button" data-enter data-magnetic>Enter Studio <svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+      <p class="fin-sub">Three panels · One look</p>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-in">
+    <p><span class="wm"><em>Trip</em>tych</span>&nbsp; · &nbsp;Atelier · Est. 2026</p>
+    <p>Pieces, prices and colours on this page come from the Triptych catalogue: 523 pieces, priced in rupees.</p>
+  </div>
+</footer>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-label="Your bag" inert>
+  <div class="dr-head">
+    <h2>Your bag</h2>
+    <button class="icon-btn" id="drawer-x" type="button" aria-label="Close bag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </div>
+  <div class="dr-body" id="dr-body"></div>
+  <div class="dr-foot">
+    <p class="dr-sub"><span>Subtotal</span><b id="dr-sub">₹0</b></p>
+    <button class="btn btn-line" id="dr-clear" type="button">Clear bag</button>
+    <p class="dr-note">A preview of the app's bag. Nothing here is ordered.</p>
+  </div>
+</aside>
+
+<div class="curtain" id="curtain" aria-hidden="true"></div>
+<div class="curtain-word" id="curtain-word" aria-hidden="true"><span class="mark"><i></i><i></i><i></i></span><p id="cw-text">Bonjour</p></div>
+<div class="cursor is-hidden" id="cursor" aria-hidden="true"><span class="cur-ring"><i><span>‹ Drag ›</span></i></span><span class="cur-dot"><i></i></span></div>
+
+<script>
+(() => {
+'use strict';
+
+/* ───────────────────────── data ───────────────────────── */
+// The full catalogue, one row per article: [name, price ₹, hex, colour, occasion bits].
+// Each band is sorted neutrals first (dark to light), then by hue.
+const CAT = {"tops":[["Oversized print-motif T-shirt",799,"272627","Black",5],["Tie-detail smocked top",1299,"272627","Black",1],["Gathered halterneck top",699,"272627","Black",17],["Fitted T-shirt",699,"272627","Black",1],["Layered top",599,"272627","Black",1],["Crinkled tie-detail top",999,"272627","Black",1],["Cotton T-shirt",499,"272628","Black",1],["Fitted T-shirt",499,"272628","Black",1],["Ribbed vest top",699,"272628","Black",1],["Oversized T-shirt",799,"272628","Black",5],["Fitted cotton T-shirt",699,"272836","Dark blue",1],["Fitted T-shirt",699,"34272C","Plum purple",1],["Printed T-shirt",699,"3C2A2B","Brown",5],["Fitted T-shirt",699,"2C303E","Navy blue",1],["Oversized print-motif T-shirt",999,"3B312B","Dark brown",5],["Cotton halterneck top",1299,"353334","Dark grey",17],["Scoop-neck cotton top",499,"343649","Dark blue",1],["Layered top",599,"343649","Navy blue",1],["Layered top",599,"3E3838","Dark brown",1],["Ribbed scoop-neck T-shirt",699,"3F3838","Dark brown",1],["Lace-trimmed viscose-blend vest top",699,"3F3838","Dark brown",1],["Ribbed lace-inset top",999,"3F3838","Dark brown",1],["Printed T-shirt",699,"3D3B3D","Dark brown",5],["Cotton T-shirt",499,"77605F","Dark dusty pink",1],["Ribbed scoop-neck T-shirt",699,"969696","Grey marl",1],["Cotton T-shirt",499,"A0A0A0","Light grey marl",1],["Fitted T-shirt",499,"9CAAAE","Light dusty turquoise",1],["Printed T-shirt",699,"AFAFAF","Light grey marl",5],["Ribbed scoop-neck T-shirt",699,"ACBBC9","Light blue",1],["Ribbed vest top",699,"DBC2C2","Light dusty pink",1],["Cotton T-shirt",499,"DBC2C2","Light pink",1],["Printed T-shirt",699,"DFD7CA","Light beige",5],["Ribbed cotton vest top",699,"E9E4DA","White",1],["Printed T-shirt",699,"ECE7E1","Ivory",5],["Printed T-shirt",699,"ECE7E1","Cream",5],["Oversized print-motif T-shirt",799,"ECE9E2","White",5],["Printed T-shirt",699,"ECE9E2","Light beige",5],["Printed T-shirt",699,"ECE9E2","White",5],["Lace-up peplum top",1999,"EEEDE1","Cream",17],["Ribbed halterneck top",799,"ECEDEC","White",17],["Cotton T-shirt",499,"F0EEED","White",1],["Ribbed scoop-neck T-shirt",699,"F0EEED","White",1],["Printed T-shirt",699,"F0F1F0","White",5],["Ribbed vest top",699,"FFFFFF","White",1],["Printed T-shirt",699,"FFFFFF","White",5],["Fitted T-shirt",699,"C7999B","Pink",1],["Asymmetric tie-detail top",1499,"DFB7B8","Light pink",1],["Linen-blend waistcoat",1499,"B2233B","Red",2],["Vest top",699,"BA2127","Red",1],["Wrapover handkerchief top",1999,"BA2127","Red",1],["Cotton T-shirt",999,"BA2127","Red",1],["Lace-trimmed ribbed body",1299,"BA2127","Red",1],["Linen-blend tie-strap top",2299,"BA2127","Bright red",1],["Oversized T-shirt",799,"BB8680","Dusty pink",5],["Oversized cotton T-shirt",699,"4A2D26","Brown",5],["One-shoulder thong body",699,"8F5849","Orange",17],["Cotton T-shirt",499,"CE7C56","Orange",1],["Ribbed vest top",699,"9C8B73","Beige",1],["Oversized T-shirt",799,"7B715A","Khaki green",5],["Lace-trimmed viscose-blend vest top",699,"EFE7C2","Yellow",1],["Fitted cotton T-shirt",699,"EFE7C2","Light yellow",1],["Fitted cotton T-shirt",699,"EBE0A6","Light yellow",1],["Printed T-shirt",699,"EFE5AE","Light yellow",5],["Oversized cotton T-shirt",699,"6B6746","Olive green",5],["Oversized print-motif T-shirt",799,"E7E7C8","Light yellow",5],["Printed T-shirt",699,"86A5C0","Dusty light blue",5],["One-shoulder thong body",699,"7E8EA6","Light blue",17],["Fitted T-shirt",499,"222D47","Navy blue",1],["Smocked bandeau top",699,"1E00C0","Bright blue",17],["Oversized T-shirt",999,"B4A7BF","Light purple",5],["Oversized T-shirt",999,"CC8BAA","Pink",5],["Printed T-shirt",699,"9D6F82","Pink",5]],"bottoms":[["Straight High Jeans",1499,"000000","Black",1],["Wide High Waist Jeans",1999,"000000","Washed black",5],["Flared High Jeans",1699,"000000","Black",1],["Flared High Jeans",1999,"000000","Denim black",1],["Baggy High Waist Jeans",1999,"000000","Washed black",5],["Denim skort",1499,"000000","Black",1],["Foldover-waist cotton trousers",999,"272627","Black",1],["Wide trousers",1499,"272627","Black",2],["Tailored linen-blend trousers",2499,"272627","Black",2],["Flared Yoga leggings with SoftMove™",2799,"272627","Black",8],["Wide sports leggings with SoftMove™",2799,"272627","Black",8],["Flared interlock leggings",999,"272627","Black",9],["Wide gathered-waist trousers",999,"272627","Black",1],["Wide tailored trousers",2299,"272627","Black",2],["Linen-blend barrel trousers",2299,"272627","Black",5],["SculptMove™ High-waisted leggings",2799,"272627","Black",8],["Satin drawstring trousers",1499,"272627","Black",17],["Capri trousers",1499,"272627","Black",3],["Regular Fit Running shorts with DryMove™",1499,"272627","Black",8],["Ponte di Roma skort",1299,"272627","Black",1],["Double-layered sports shorts",1999,"272627","Black",8],["SoftMove™ Pocket cycling shorts",1499,"272627","Black",8],["Pleat-front shorts",1499,"272627","Black",2],["Tailored linen-blend shorts",1999,"272627","Black",2],["Sweatshorts",799,"272627","Black",5],["Running cycling shorts with ShapeMove™",1999,"272627","Black",8],["Sports hotpants with SoftMove™",1299,"272627","Black",8],["Linen-blend trousers",1999,"272628","Black",3],["Wide pull-on trousers",1499,"272628","Black",1],["Sweatshirt shorts",799,"272628","Black",5],["Sports cycling shorts with SoftMove™",1299,"272628","Black",8],["Regular Fit Running shorts with DryMove™",1499,"272836","Navy blue",8],["Wide joggers",999,"34272C","Dark plum purple",5],["Wide pull-on trousers",999,"3C2A2B","Dark brown",1],["Linen-blend drawstring shorts",1999,"3C2A2B","Dark brown",1],["Mom Slim Fit High Waist Ankle Jeans",1499,"2E3036","Denim blue",1],["Denim pull-on trousers",1899,"2E3036","Dark denim blue",5],["Wide High Waist Jeans",1999,"2E3036","Dark denim blue",5],["Wide High Waist Jeans",1999,"2E3036","Dark denim blue",5],["High Flared Jeggings",1499,"2E3036","Navy denim blue",1],["Wide High Waist Jeans",1999,"2E3036","Navy denim blue",5],["Balloon High Waist Jeans",2299,"2E3036","Dark denim blue",5],["Flared High Jeans",1699,"2E3036","Dark denim blue",1],["Wide High Waist Jeans",1999,"2E3036","Navy denim blue",5],["Wide High Waist Jeans",1999,"2E3036","Dark denim blue",5],["Wide High Waist Ankle Jeans",1999,"2E3036","Dark denim blue",1],["Wide High Waist Jeans",1999,"2E3036","Navy denim blue",5],["High Flared Jeggings",1499,"2E3036","Dark denim blue",1],["Flared High Jeans",1699,"2E3036","Dark denim blue",1],["Wide High Waist Jeans",1999,"2E3036","Navy denim blue",5],["Balloon-leg denim trousers",2499,"2E3036","Dark denim blue",5],["Wide High Waist Jeans",1999,"2E3036","Dark denim blue",5],["Super Wide High Waist Jeans",2799,"2E3036","Denim blue",1],["High-waisted denim skort",1999,"2E3036","Dark denim blue",1],["Drawstring sweatshorts",999,"2F3237","Washed black",5],["Foldover-waist cotton trousers",999,"2F323B","Navy blue",1],["Sweatshirt shorts",799,"2F323B","Dark blue",5],["Wide pull-on trousers",1499,"3B312B","Dark beige",1],["Wide joggers",999,"353334","Dark grey",5],["Straight muslin trousers",1499,"353334","Nearly black",1],["Linen-blend ankle-length trousers",1499,"3C3533","Dark brown",1],["Wide sports leggings with SoftMove™",2799,"3C3533","Warm brown",8],["Sports cycling shorts with SoftMove™",1299,"3C3533","Warm brown",8],["Wide cargo trousers",1499,"3E3838","Dark brown",5],["Straight muslin trousers",1499,"3F3838","Dark brown",1],["Linen-blend trousers",1999,"3F3838","Dark brown",3],["Foldover-waist cotton trousers",999,"3F3838","Dark brown",1],["Wide pull-on trousers",1499,"3F3838","Dark brown",1],["Sweatshorts",799,"3F3838","Dark brown",5],["Tailored linen-blend shorts",1999,"3F3838","Dark brown",2],["Textured jersey drawstring shorts",799,"3F3838","Dark brown",1],["Drawstring shorts",1299,"3D3B3D","Dark brown",1],["Linen-blend trousers",1999,"403C2D","Dark khaki green",3],["Wide pull-on trousers",999,"443B33","Dark brown",1],["Wide Regular Jeans",2499,"453D33","Dark brown",5],["Sports hotpants with SoftMove™",1299,"403C4A","Plum",8],["Wide pull-on trousers",1499,"40454F","Dark pigeon blue",1],["Wide pull-on trousers",999,"53443C","Dark brown",1],["Straight muslin trousers",1499,"585340","Dark khaki green",1],["Drawstring sweatshorts",999,"624E44","Brown",5],["Foldover-waist cotton trousers",999,"5D5550","Dark mole",1],["MAMA 2-piece cotton jersey set",1999,"5D5550","Dark mole",1],["Sweatshirt shorts",799,"77605F","Dark dusty pink",5],["Wide High Waist Jeans",1999,"706C6F","Dark denim grey",5],["Mom Slim Fit High Waist Ankle Jeans",1499,"706C6F","Dark denim grey",1],["Wide Regular Waist Jeans",1999,"706C6F","Grey",5],["High-waisted denim shorts",1499,"706C6F","Dark grey",1],["Twill drawstring trousers",1399,"6E6E6E","Dark grey marl",1],["Linen-blend wrapover trousers",2299,"756F5F","Khaki green",1],["Sweatpants",999,"828282","Grey marl",5],["Wide joggers",999,"969696","Grey marl",5],["Flared High Jeans",1699,"8898AC","Denim blue",1],["Wide wrap-detail trousers",1499,"84A0AA","Light turquoise",1],["Wide High Waist Ankle Jeans",1999,"A79985","Beige",1],["Crinkled mini skort",999,"929EB3","Light blue",1],["Sweatshorts",799,"A0A0A0","Light grey marl",5],["Balloon cargo trousers",1499,"B2A296","Beige",5],["Crease-front jersey trousers",1499,"9CAAAE","Light dusty turquoise",2],["Drawstring shorts",1299,"9CAAAE","Light dusty turquoise",1],["Denim pull-on trousers",1899,"ACAAAD","Light grey",5],["Denim drawstring trousers",1999,"ACAAAD","Grey",5],["Wide High Waist Jeans",1999,"ACAAAD","Denim grey",5],["Satin drawstring trousers",1499,"B7AB9A","Beige",17],["Linen-blend trousers",1999,"C0BBAD","Light beige",3],["Knee-length sweatshorts",1499,"BEBEBE","Light grey marl",5],["Sweatshirt shorts",799,"C3BEB7","Light beige marl",5],["Sweatshorts",799,"DBC2C2","Light pink",5],["Tailored linen-blend trousers",2299,"DCD6C7","Light beige",2],["Crinkled mini skort",999,"DCD6C7","Cream",1],["Wide tailored trousers",1999,"DFD7CA","Light beige",2],["Wide pull-on trousers",999,"DFD7CA","Light beige",1],["Belted tailored shorts",1999,"DFD7CA","Cream",2],["Wide pull-on trousers",999,"DFD8C9","Cream",1],["Wrap skort",1899,"DFD8C9","Light beige",1],["Bermuda shorts",2299,"DFD8C9","Light beige",5],["Linen-blend ankle-length trousers",1499,"E6DADA","Light pink",1],["Loose-fit shorts",1999,"EDDCDA","Light pink",5],["Wide tailored trousers",2299,"E3E4DF","Cream",2],["Sweatshirt shorts",799,"E9E4DA","White",5],["Baggy High Waist Jeans",1999,"EAE5D6","Light beige",5],["Wide High Waist Jeans",1999,"EAE5D6","White",5],["Bootcut High Waist Jeans",2499,"EAE5D6","Light beige",1],["Raw-edge denim shorts",1499,"EAE5D6","Cream",5],["Straight scalloped trousers",1999,"EEEDE1","Cream",1],["Wide linen-blend trousers",1499,"ECEDEC","White",3],["Balloon cargo trousers",1499,"ECEDEC","Ivory",5],["Cotton balloon trousers",1999,"ECEDEC","Ivory",5],["Tie-belt paper bag trousers",1999,"EFEEEA","Cream",5],["Baggy High Waist Jeans",1999,"EFEEEA","White",5],["Wide High Waist Ankle Jeans",1999,"EFEEEA","White",1],["Mom Slim Fit High Waist Ankle Jeans",1499,"EFEEEA","White",1],["Wide High Waist Jeans",1999,"EFEEEA","White",5],["Wide High Waist Jeans",2799,"EFEEEA","White",5],["Wide High Waist Jeans",2799,"EFEEEA","White",5],["Denim drawstring shorts",1499,"EFEEEA","White",1],["High-waisted denim shorts",1499,"EFEEEA","Cream",1],["Denim Bermuda shorts",1999,"EFEEEA","Cream",5],["High-waisted denim skort",1999,"EFEEEA","Cream",1],["Denim skort",1499,"EFEEEA","White",1],["Linen-blend trousers",1999,"F0EEED","White",3],["Linen-blend trousers",2299,"F0EEED","White",3],["Wide tailored trousers",2299,"F0EEED","Cream",2],["Linen-blend barrel trousers",2299,"F0EEED","Cream",5],["Tailored linen-blend trousers",2499,"F0EEED","Cream",2],["Bootcut cotton canvas trousers",1499,"F0EEED","White",1],["Tailored linen-blend shorts",1999,"F0EEED","Ivory",2],["Drawstring shorts",1299,"F0EEED","Ivory",1],["Belted twill shorts",1999,"F0EEED","White",3],["Pleat-front shorts",1499,"F0EEED","White",2],["Tailored linen-blend shorts",1999,"F0EEED","White",2],["Tiered viscose mini skort",1499,"F0F1F0","Cream",1],["SoftMove™ Pocket cycling shorts",1499,"330F1A","Chocolate plum",8],["Double-layered sports shorts",1999,"330F1A","Chocolate plum",8],["Printed pull-on trousers",2999,"5D3B41","Dark red",1],["Linen-blend trousers",1999,"6B333B","Dark red",3],["Linen-blend shorts",1499,"6B333B","Dark red",1],["Wide joggers",999,"C7999B","Light pink",5],["Linen-blend drawstring trousers",1999,"B2233B","Bright red",1],["Wide pull-on trousers",1499,"7E4340","Red",1],["Crinkled mini skort",999,"B91623","Bright red",1],["Crochet-look jacquard jersey trousers",1999,"BA2127","White",1],["Baggy High Waist Jeans",1999,"673328","Rust red",5],["Wide tailored trousers",1999,"4A2D26","Dark rust brown",2],["Linen-blend ankle-length trousers",1499,"927156","Beige",1],["Wide pull-on trousers",999,"6C5531","Dark khaki green",1],["Linen-blend drawstring trousers",1499,"D0C2AA","Light beige",1],["Double-layered sports shorts",1999,"ECE1C6","Butter yellow",8],["Sports cycling shorts with SoftMove™",1299,"ECE1C6","Butter yellow",8],["Linen-blend drawstring trousers",1999,"E2D4A9","Yellow",1],["Tailored twill shorts",1999,"534D36","Dark khaki green",2],["Sweatshirt shorts",799,"EFE7C2","Light yellow",5],["Wide High Waist Jeans",1999,"80AAD8","Light denim blue",5],["Wide High Waist Jeans",1999,"80AAD8","Denim blue",5],["Wide High Waist Jeans",1999,"80AAD8","Light denim blue",5],["Wide High Waist Jeans",1999,"80AAD8","Light denim blue",5],["Mom Slim Fit High Waist Ankle Jeans",1499,"80AAD8","Light denim blue",1],["Wide High Waist Jeans",1999,"80AAD8","Light denim blue",5],["Wide High Waist Culotte Jeans",2799,"80AAD8","Light denim blue",5],["Barrel High Waist Ankle Jeans",2699,"80AAD8","Light denim blue",5],["Denim drawstring trousers",1999,"80AAD8","Light denim blue",5],["Flared High Jeans",1699,"80AAD8","Light denim blue",1],["Baggy Wide Low Waist Jeans",2499,"80AAD8","Light denim blue",5],["Slim Straight High Ankle Jeans",1999,"80AAD8","Light denim blue",1],["Baggy Regular Waist Jeans",1999,"80AAD8","Light denim blue",5],["Denim drawstring shorts",1499,"80AAD8","Light denim blue",1],["High-waisted denim shorts",1499,"80AAD8","Light denim blue",1],["Denim Bermuda shorts",1999,"80AAD8","Light denim blue",5],["Raw-edge denim shorts",1499,"80AAD8","Light denim blue",5],["Wide tailored trousers",1999,"35465E","Dark blue",2],["Linen-blend drawstring trousers",1999,"3B62A5","Bright blue",1],["Straight High Jeans",1499,"3E64A7","Light denim blue",1],["Flared High Jeans",1699,"3E64A7","Denim blue",1],["Straight High Jeans",1499,"3E64A7","Dark denim blue",1],["Wide High Waist Jeans",1999,"3E64A7","Dark denim blue",5],["Baggy Wide Low Waist Jeans",2499,"3E64A7","Denim blue",5],["High Flared Jeggings",1499,"3E64A7","Denim blue",1],["Wide High Waist Jeans",1999,"3E64A7","Denim blue",5],["Mom Slim Fit High Waist Ankle Jeans",1499,"3E64A7","Denim blue",1],["Wide High Jeans",1999,"3E64A7","Denim blue",5],["Wide High Waist Jeans",1999,"3E64A7","Denim blue",5],["Wide High Waist Jeans",1999,"3E64A7","Washed denim blue",5],["Wide High Waist Jeans",2799,"3E64A7","Denim blue",5],["Wide High Waist Jeans",1999,"3E64A7","Denim blue",5],["Tie-belt paper bag trousers",1999,"3E64A7","Denim blue",5],["Straight High Waist Scarf-detail jeans",2799,"3E64A7","Denim blue",1],["Denim drawstring trousers",1699,"3E64A7","Light denim blue",5],["High-waisted denim skort",1999,"3E64A7","Denim blue",1],["High-waisted denim shorts",1499,"3E64A7","Denim blue",1],["Raw-edge denim shorts",1499,"3E64A7","Denim blue",5],["Denim skort",1499,"3E64A7","Denim blue",1],["Frayed denim shorts",1499,"3E64A7","Denim blue",5],["Sweatshirt shorts",799,"222D47","Navy blue",5],["Linen-blend pull-on shorts",1999,"A9B7D8","Light blue",1],["Textured jersey trousers",1499,"767F99","Pigeon blue",1],["Printed pull-on shorts",1499,"CC8BAA","Pink",1],["Linen-blend drawstring shorts",1499,"CEA9B9","Light pink",1]],"shoes":[["Canvas espadrilles",1499,"272627","Black",1],["Trainers",2999,"272627","Black",13],["Chelsea boots",2999,"272627","Black",19],["Moccasin-seam loafers",3999,"272627","Black",19],["Trainers",2399,"272627","Black",13],["Derby shoes",2999,"272627","Black",18],["Chelsea boots",2999,"353031","Dark brown",19],["Derby shoes",2999,"353031","Dark brown",18],["Loafers",2999,"393A45","Navy blue",19],["Tasseled loafers",2999,"504540","Dark brown",19],["Loafers",2999,"AE9F8E","Light beige",19],["Canvas espadrilles",1499,"B5AFA0","Beige",1],["Trainers",2399,"B5AFA0","Light beige",13],["Canvas trainers",2799,"E9E4DA","White",13],["Trainers",2399,"FFFFFF","White",13],["Trainers",2999,"A22E3C","Red",13],["Loafers",2999,"715B3F","Light brown",19],["Canvas trainers",2799,"AA9A81","Beige",13],["Canvas trainers",2799,"8C93B3","Dusty blue",13]],"full":[["Cap-sleeved dress",1499,"272627","Black",16],["Open-back maxi dress",2299,"272627","Black",16],["Embellished halterneck dress",1299,"272627","Black",16],["Embellished bandeau dress",1499,"272627","Black",16],["Ruched mesh dress",1999,"272627","Black",16],["Flared-skirt dress",1999,"272627","Black",16],["Textured jersey dress",1899,"272627","Black",1],["Asymmetric dress",3999,"272627","Black",16],["Long T-shirt dress",1499,"272627","Black",1],["Printed mini dress",1999,"272627","Black",16],["Rib-knit collared dress",2099,"272627","Black",3],["Rib-knit trousers",2099,"272627","Black",1],["Oversized linen-blend shirt",2299,"272627","Black",5],["Lace-trimmed drawstring trousers",2299,"272627","Black",1],["Rib-knit T-shirt dress",2799,"272627","Black",1],["Lace-trimmed satin dressing gown",2999,"272627","Black",1],["Lace-trimmed satin shorts",1299,"272627","Black",1],["Lace-trimmed satin nightslip",2999,"272627","Black",1],["Lace-trimmed viscose pyjamas",2799,"272627","Black",1],["Lace-trimmed satin pyjama top",1499,"272627","Black",1],["Lace-trimmed viscose nightslip",2799,"272627","Black",1],["Lace-trimmed satin pyjama shorts",1499,"272627","Black",1],["Pointelle jersey pyjamas",1899,"272627","Black",1],["Lace-trimmed satin nightslip",2999,"272627","Black",1],["Viscose-blend pyjamas",2499,"272628","Black",1],["Cotton-blend trousers",1499,"272628","Black",1],["Satin pyjamas",2999,"272628","Black",1],["Satin dressing gown",2799,"272628","Black",1],["Waisted cotton shirt dress",2499,"3C2A2B","Dark brown",3],["Midi T-shirt dress",1499,"3C2A2B","Dark brown",1],["Satin pyjamas",2799,"3C2A2B","Dark brown",1],["Lace-trimmed ribbed pyjamas",1499,"3C2A2B","Dark brown",1],["Ribbed pyjamas",1999,"3C2A2B","Dark brown",1],["Lace-trimmed satin nightslip",2999,"3C2A2B","Dark brown",1],["Fine-knit trousers",2799,"2C303E","Navy blue",1],["Fine-knit trousers",1799,"2C303E","Navy blue",1],["Jumper",1999,"2C303E","Navy blue",1],["Pyjama shirt and shorts",2799,"2C303E","Dark blue",1],["Fine-knit cardigan",2799,"2F3237","Dark grey marl",1],["Lyocell shirt",2599,"2F3237","Dark grey marl",3],["Long T-shirt dress",1499,"2F323B","Navy blue",1],["Viscose-blend pyjamas",2499,"413333","Dark brown",1],["Pyjama shirt and shorts",2799,"413333","Dark brown",1],["Tiered cotton dress",1499,"3E3838","Dark brown",1],["Tie-belt shirt dress",2299,"3F3838","Dark brown",3],["Cotton T-shirt dress",999,"3F3838","Dark brown",1],["Flared rib-knit linen-blend trousers",2799,"3F3838","Dark brown",3],["Rib-knit T-shirt dress",2799,"3F3838","Dark brown",1],["Flared brushed jersey trousers",1499,"3F3838","Dark brown",1],["Rib-knit linen-blend cardigan",2799,"3F3838","Dark brown",1],["Rib-knit viscose trousers",2799,"3F3838","Dark brown",1],["Brushed jersey wrap top",1499,"3F3838","Dark brown",1],["Fine-knit trousers",2799,"3F3838","Dark brown",1],["Rib-knit viscose skirt",2299,"3F3838","Dark brown",1],["Knitted zip-through hoodie",2799,"3F3838","Dark brown",5],["Cotton rugby shirt",2299,"3F3838","Dark brown",5],["Rib-knit viscose top",1499,"3F3838","Dark brown",1],["Wide linen trousers",2999,"3F3838","Dark brown",1],["Cotton jersey shorts",1299,"3F3838","Dark brown",1],["Jumper",1999,"3F3838","Dark brown",1],["Washed-look cotton trousers",2599,"493338","Burgundy",1],["Viscose satin pyjamas",2299,"4F3D3B","Dark brown",1],["Satin pyjamas",2799,"4F3D3B","Dark brown",1],["Viscose-blend pyjamas",2299,"4F3D3B","Rust brown",1],["Linen-blend throw-on dress",2999,"4E423E","Dark brown",1],["Linen-blend shirt dress",3999,"4E423E","Dark brown",3],["Soft-touch flared trousers",1399,"4E423E","Dark brown",1],["Oversized jumper",2799,"4B4543","Dark brown",5],["Rib-knit linen-blend top",2799,"4B4543","Dark brown",1],["Fine-knit trousers",2299,"4B4543","Dark brown",1],["Cable-knit dress",3599,"4D4D55","Dark grey marl",1],["Draped maxi dress",2299,"54585F","Dark grey",16],["Viscose-blend pyjama bottoms",1499,"68524C","Dark dusty pink",1],["Broderie anglaise pyjamas",2799,"68524C","Dusty red",1],["Roll-edge knitted shorts",1499,"745C54","Dark dusty pink",1],["Roll-edge jumper",1999,"745C54","Brown",1],["Muslin dressing gown",1999,"686E59","Green",1],["Muslin dressing gown",1999,"726A5D","Mole",1],["Asymmetric flounce-trimmed dress",2799,"79735F","Khaki green",16],["Voluminous tie-detail dress",3999,"79735F","Khaki green",1],["Washed-look cotton trousers",2599,"A49092","Dusty pink",1],["Washed-look sweatpants",2099,"A49092","Dusty pink",5],["Skirt-panel ribbed dress",1999,"ABA68F","Light beige",1],["Tiered-skirt shirt dress",2999,"9CAAAE","Light dusty turquoise",3],["Balloon-sleeved shirt dress",2999,"9CAAAE","Red",7],["Draped one-shoulder jersey dress",2799,"BAB6C7","Light dusty purple",16],["Viscose-blend pyjamas",2299,"AEBACE","Light blue",1],["Viscose-blend pyjamas",2499,"C5B5B5","Light pink",1],["Fine-knit trousers",2799,"BEBEBE","Light grey marl",1],["Cardigan",2799,"BEBEBE","Light grey marl",1],["Jumper",1999,"BEBEBE","Light grey marl",1],["Pointelle-knit pyjamas",2799,"BEBEBE","Light grey marl",1],["Lace-trimmed ribbed pyjamas",1499,"B9C0D8","Light blue",1],["Pointelle pyjamas",1399,"D6BAB6","Light pink",1],["Printed beach kaftan",1899,"C9C4BA","Cream",1],["Oxford pyjamas",3499,"C9C4BA","Light beige",1],["Roll-edge jumper",1999,"CCC2C2","Light dusty pink",1],["Roll-edge knitted shorts",1499,"CCC2C2","Powder pink",1],["Viscose-blend pyjamas",2099,"CCC2C2","Light pink",1],["Brushed jersey pyjamas",2299,"CCC2C2","Powder pink",1],["Smocked poplin dress",2299,"BDC8D2","Light blue",1],["Puff-sleeved poplin dress",1499,"BDC8D2","Light blue",1],["Printed nightdress",1299,"C8C8C8","Light grey marl",1],["Open-back cotton poplin dress",2299,"C2C8DC","Light blue",16],["Lace-trimmed pyjamas",1499,"D0C9C0","Light beige marl",1],["Ribbed pyjamas",1999,"D0C9C0","Light beige marl",1],["Flounced one-shoulder dress",1999,"C7CDC1","Light dusty green",16],["Pyjama shirt and shorts",2799,"DCCAD0","Light pink",1],["Pyjama shirt and shorts",2799,"DCCAD0","Light pink",1],["Short tunic dress",2999,"D9CEBD","Light beige",1],["Fine-knit trousers",2799,"D7CFBD","Light beige",1],["Cable-knit polo jumper",2799,"D7CFBD","Beige",1],["Flared-skirt viscose dress",1999,"E1CACC","Light pink",1],["Brushed jersey wrap top",1499,"E1CACC","Light pink",1],["Flared brushed jersey trousers",1499,"E1CACC","Light pink",1],["Cable-knit shorts",1999,"E1CACC","Light pink",1],["Pyjama shirt and shorts",2299,"E7D0C5","Light peach pink",1],["Long T-shirt dress",1499,"DCD6C7","Cream",1],["Long T-shirt dress",1499,"DCD6C7","Light beige",1],["Oversized linen-blend shirt",2299,"DCD6C7","Light beige",5],["Linen-blend shirt dress",3999,"DCD6C7","Light beige",3],["Open-back twill dress",1499,"DFD7CA","Light beige",16],["Tie-belt midi dress",2299,"E1D6CC","Light pink",1],["Printed pyjamas",1499,"EBD4E2","Light pink",1],["Cotton pyjama bottoms",1299,"EBD4E2","Light pink",1],["Printed pyjamas",1499,"EDD6CF","Peach pink",1],["Cotton muslin pyjamas",2299,"EED4DF","Light pink",1],["Viscose tunic dress",1499,"E9E4DA","Blue",1],["T-shirt dress",999,"E9E4DA","Cream",1],["Long cotton dress",2299,"ECE7E1","White",1],["Ribbed jersey pyjamas",1499,"EDE9D7","Cream",1],["Printed pyjamas",1499,"F2E8D6","Cream",1],["Pointelle pyjamas",1399,"ECE9E2","White",1],["Twist-detail printed dress",2999,"EEEDE1","Cream",1],["Linen-blend throw-on dress",2999,"EEEDE1","Cream",1],["Fine-knit cardigan",2799,"EEEDE1","Cream",1],["Pointelle-knit viscose-blend top",1499,"EEEDE1","Light beige",1],["Fine-knit top",1999,"EEEDE1","Cream",1],["Cable-knit cardigan",2799,"EEEDE1","Cream",1],["Fitted jumper",2799,"EEEDE1","Cream",1],["Oversized jumper",2799,"EEEDE1","Cream",5],["Rib-knit trousers",2099,"EEEDE1","Cream",1],["Pointelle-knit viscose-blend cardigan",2799,"EEEDE1","Light beige",1],["Fine-knit trousers",2299,"EEEDE1","Cream",1],["Flared cable-knit trousers",2799,"EEEDE1","White",1],["Pointelle-knit viscose-blend trousers",2799,"EEEDE1","Light beige",1],["Fine-knit cardigan",2099,"EEEDE1","Cream",1],["Cable-knit dress",3599,"EEEDE1","Cream",1],["Cable-knit trousers",2599,"EEEDE1","White",1],["Drawstring sweatshorts",2099,"EEEDE1","Cream",5],["Hooded wool-blend dress",2999,"EEEDE1","Cream",1],["Rib-knit cardigan",2799,"EEEDE1","Cream",1],["Lace-trimmed satin pyjamas",2299,"EEEDE1","Cream",1],["Brushed jersey pyjamas",2799,"EEEDE1","White",1],["Pyjama shirt and shorts",2799,"EEEDE1","Cream",1],["Cotton muslin pyjamas",2299,"EEEDE1","Cream",1],["Viscose-blend pyjamas",2299,"EEEDE1","Cream",1],["Lace-trimmed satin pyjama shorts",1499,"EEEDE1","Cream",1],["Lace-trimmed satin pyjamas",2799,"EEEDE1","Cream",1],["Pointelle pyjama bottoms",1299,"EEEDE1","Cream",1],["Lace-trimmed satin shorts",1299,"EEEDE1","Cream",1],["Pyjama shirt and shorts",2799,"EEEDE1","Cream",1],["Printed pyjamas",1499,"EEEDE1","Cream",1],["Linen-blend pyjama shorts",2299,"EEEDE1","Pale yellow",1],["Linen-blend pyjama top",1999,"EEEDE1","Pale yellow",1],["Linen-blend shirt dress",3999,"ECEDEC","White",3],["Denim halterneck dress",2299,"EFEEEA","White",16],["Flared-skirt strappy dress",1999,"F0EEED","White",16],["Flared-skirt tie-strap dress",5499,"F0EEED","Cream",1],["Smocked cotton dress",1999,"F0EEED","White",16],["Cotton pull-on shorts",1499,"F0EEED","White",1],["Oversized cotton shirt",2299,"F0EEED","White",7],["Cotton pointelle pyjamas",1499,"F0EEED","White",1],["Lace-trimmed ribbed pyjamas",1499,"F0EEED","Cream",1],["Pointelle pyjama bottoms",1299,"F0EEED","White",1],["Open-back twill dress",1499,"F0F1F0","Cream",16],["Flared-skirt dress",1999,"F0F1F0","Ivory",16],["Halterneck mini dress",2799,"FAB9C2","Light pink",16],["Balloon-sleeved tunic dress",3999,"5F353C","Dark red",5],["Draped maxi dress",1999,"9E2C3E","Red",16],["Open-back strappy dress",3599,"9E2C3E","Red",16],["Puff-sleeved poplin dress",1499,"DFB7B8","Light pink",1],["Lace-trimmed pyjamas",1499,"482F2F","Dark brown",1],["Waisted cotton shirt dress",2499,"B32B34","Bright red",3],["Linen-blend shirt dress",3999,"674644","Rust red",3],["Ruched halterneck dress",2999,"BA2127","Red",16],["Tie-strap cotton dress",1999,"BB8680","Dusty pink",1],["Textured jersey dress",1499,"7B3F32","Burnt orange",1],["Long T-shirt dress",1499,"4A2D26","Brown",1],["Oversized tunic dress",2999,"4A2D26","Dark brown",5],["Flared-skirt poplin dress",1499,"E5BEB3","Light pink",1],["Muslin dressing gown",1999,"B89F90","Light dusty pink",1],["Printed pyjamas",1499,"BBA18E","Brown",1],["Wide pyjama bottoms",1299,"BBA18E","Brown",1],["Broderie anglaise drawstring-detail dress",2499,"76654E","Dark beige",1],["Rib-knit T-shirt dress",2799,"E1CFB1","Pale yellow",1],["Smocked strappy dress",1499,"F7EBC8","Light yellow",16],["Draped maxi dress",1999,"615730","Olive green",16],["Open-back cotton poplin dress",2299,"E9E1BF","Pale yellow",16],["Cotton poplin shirt dress",2999,"6B6746","Olive green",3],["Draped chiffon dress",2799,"E2E2A9","Light yellow",16],["Flounce-trimmed strappy dress",1999,"5E843C","Green",16],["Broderie-anglaise cotton dress",3999,"5E843C","Green",16],["Open-back maxi dress",2299,"80AAD8","Light denim blue",16],["Cotton pyjamas",2799,"90B0D6","Blue",1],["Pyjama shirt and shorts",2299,"ADBED3","Light blue",1],["Tie-belt shirt dress",2299,"2E5183","Blue",3],["Denim midi dress",2799,"3E64A7","Denim blue",1],["Denim halterneck dress",2299,"3E64A7","Denim blue",16],["Glittery halterneck dress",1999,"A9B7D8","Light blue",16],["Collared fine-knit dress",1499,"242B50","Blue",3],["Tie-belt shirt dress",1999,"394178","Blue",3],["Printed pyjamas",1499,"E0C3D0","Light pink",1],["2-pack pyjama shorts",1299,"E0C3D0","Light pink",1],["Cotton poplin shirt dress",2999,"CEA9B9","Light pink",3],["Tiered midi dress",2299,"402A32","Dark purple",1]]};
+const BIT = { casual: 1, formal: 2, street: 4, athletic: 8, evening: 16 };
+
+// Pieces shown in the panels, with their real colourways, sizes and sold-out sizes.
+const DEMO = {
+  tops: [
+    { n: 'Cotton T-shirt', p: 499, t: 'tee', sw: [['White', 'F0EEED'], ['Black', '272628'], ['Orange', 'CE7C56'], ['Light pink', 'DBC2C2'], ['Light yellow', 'EFE7C2'], ['Light grey marl', 'A0A0A0'], ['Dark dusty pink', '77605F'], ['Blue', '394178']], sz: ['XS', 'S', 'M', 'L', 'XL'] },
+    { n: 'Oversized cotton T-shirt', p: 699, t: 'oversized', sw: [['Olive green', '6B6746'], ['Light beige', 'DFD8C9'], ['Brown', '4A2D26'], ['Light pink', 'C9A1A2'], ['Black', '272627'], ['White', 'FFFFFF']], sz: ['XS', 'S', 'M', 'L', 'XL'] },
+    { n: 'Ribbed halterneck top', p: 799, t: 'halter', sw: [['Black', '272627'], ['White', 'ECEDEC'], ['Light pink', 'ECCEDD']], sz: ['XXS', 'XS', 'S', 'M', 'L', 'XL'] },
+    { n: 'Linen-blend waistcoat', p: 1499, t: 'waistcoat', sw: [['Red', 'B2233B']], sz: ['XXS', 'XS', 'S', 'M', 'L', 'XL'] },
+    { n: 'Vest top', p: 699, t: 'tank', sw: [['Light blue', 'A9B7D8'], ['Red', 'BA2127'], ['Dark blue', '393B47']], sz: ['XS', 'S', 'M', 'L', 'XL'], oos: ['XS'] },
+    { n: 'Ribbed scoop-neck T-shirt', p: 699, t: 'scoop', sw: [['Dark brown', '3F3838'], ['Grey marl', '969696'], ['White', 'F0EEED'], ['Light blue', 'ACBBC9'], ['Light yellow', 'E2D4A9']], sz: ['XXS', 'XS', 'S', 'M', 'L', 'XL'] },
+  ],
+  bottoms: [
+    { n: 'Wide High Waist Jeans', p: 1999, t: 'widejeans', sw: [['Light denim blue', '80AAD8'], ['Denim blue', '3E64A7'], ['Navy denim blue', '2E3036'], ['Dark denim grey', '706C6F'], ['White', 'EFEEEA'], ['Dark brown', '453D33']], sz: ['4', '6', '8', '10', '12', '14', '16', '18'] },
+    { n: 'Linen-blend trousers', p: 1999, t: 'trousers', sw: [['Light beige', 'C0BBAD'], ['Beige', 'AE987E'], ['Dark red', '6B333B'], ['Dark khaki green', '403C2D'], ['Dark brown', '3F3838'], ['Black', '272628'], ['White', 'F0EEED']], sz: ['XS', 'S', 'M', 'L', 'XL'], oos: ['XS'] },
+    { n: 'Wide joggers', p: 999, t: 'joggers', sw: [['Grey marl', '969696'], ['Light pink', 'C7999B'], ['Rust red', '7C423A'], ['Green', '3E4F47'], ['Navy blue', '2C303E'], ['Dark grey', '353334'], ['Dark plum purple', '34272C']], sz: ['XXS', 'XS', 'S', 'M', 'L', 'XL'], oos: ['XXS'] },
+    { n: 'Wide tailored trousers', p: 1999, t: 'tailored', sw: [['Light beige', 'DFD7CA'], ['Dark blue', '35465E'], ['Dark rust brown', '4A2D26']], sz: ['4', '6', '8', '10', '12', '14', '16', '18'], oos: ['4', '14'] },
+    { n: 'High-waisted denim shorts', p: 1499, t: 'shorts', sw: [['Denim blue', '3E64A7'], ['Light denim blue', '80AAD8'], ['Cream', 'EFEEEA'], ['Dark grey', '706C6F']], sz: ['4', '6', '8', '10', '12', '14', '16', '18'] },
+    { n: 'Satin drawstring trousers', p: 1499, t: 'satin', sw: [['Beige', 'B7AB9A'], ['Black', '272627'], ['Dark red', '57332A'], ['Dark khaki green', '585340']], sz: ['XXS', 'XS', 'S', 'M', 'L', 'XL'] },
+    { n: 'Wide cargo trousers', p: 1499, t: 'cargo', sw: [['Khaki green', '796E5B'], ['Dark brown', '3E3838'], ['Black', '272627']], sz: ['XS', 'S', 'M', 'L'] },
+  ],
+  shoes: [
+    { n: 'Loafers', p: 2999, t: 'loafer', sw: [['Light brown', '715B3F'], ['Navy blue', '393A45'], ['Light beige', 'AE9F8E']], sz: ['6', '6.5', '7.5', '8', '9', '9.5', '10.5'] },
+    { n: 'Chelsea boots', p: 2999, t: 'chelsea', sw: [['Black', '272627'], ['Dark brown', '353031']], sz: ['6.5', '7.5', '8', '9', '9.5', '10.5', '11'], oos: ['6.5', '7.5', '8'] },
+    { n: 'Canvas trainers', p: 2799, t: 'trainer', sw: [['White', 'E9E4DA'], ['Beige', 'AA9A81'], ['Dusty blue', '8C93B3']], sz: ['6', '6.5', '7.5', '8', '9', '9.5', '10.5'] },
+    { n: 'Canvas espadrilles', p: 1499, t: 'espadrille', sw: [['Beige', 'B5AFA0'], ['Black', '272627']], sz: ['6', '6.5', '7.5', '8', '9', '9.5', '10.5'] },
+    { n: 'Derby shoes', p: 2999, t: 'derby', sw: [['Dark brown', '353031'], ['Black', '272627']], sz: ['6', '6.5', '7.5', '8', '9', '9.5', '10.5', '11'], oos: ['6', '11'] },
+  ],
+};
+const BAND_KEYS = ['tops', 'bottoms', 'shoes'];
+const ROLE = { tops: 'Top', bottoms: 'Bottom', shoes: 'Shoes', full: 'Full look' };
+const GREETINGS = ['Hello', 'Bonjour', 'Ciao', 'Hey', 'Welcome', 'Hi'];
+
+/* ───────────────────────── helpers ───────────────────────── */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const REDUCE = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const FINE = matchMedia('(hover: hover) and (pointer: fine)').matches;
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const smooth = (a, b, v) => { const t = clamp((v - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const mod = (v, n) => ((v % n) + n) % n;
+const wrapD = (v, n) => mod(v + n / 2, n) - n / 2;
+const fmt = (n) => n.toLocaleString('en-US');
+const inr = (n) => '₹' + n.toLocaleString('en-IN');
+const pad2 = (n) => String(n).padStart(2, '0');
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+const hexRgb = (h) => { h = h.replace('#', ''); return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16)); };
+const rgbHex = (c) => '#' + c.map((v) => Math.round(clamp(v, 0, 255)).toString(16).padStart(2, '0')).join('');
+const mixHex = (a, b, t) => { const A = hexRgb(a), B = hexRgb(b); return rgbHex(A.map((v, i) => v + (B[i] - v) * t)); };
+const lum = (h) => { const [r, g, b] = hexRgb(h).map((v) => { v /= 255; return v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; }); return .2126 * r + .7152 * g + .0722 * b; };
+const lineFor = (h) => (lum(h) > .28 ? mixHex(h, '#000000', .5) : mixHex(h, '#ffffff', .34));
+
+const ICON = {
+  left: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>',
+  right: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>',
+  x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+  bag: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><path d="M5.5 8h13l-1.1 12.2a1 1 0 0 1-1 .8H7.6a1 1 0 0 1-1-.8L5.5 8Z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/></svg>',
+  filter: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>',
+};
+
+/* ───────────────────────── one animation loop ───────────────────────── */
+const tasks = new Set();
+let raf = 0, last = 0;
+function frame(t) {
+  const dt = Math.min(.05, (t - last) / 1000); last = t;
+  let busy = false;
+  for (const fn of tasks) if (fn(dt, t)) busy = true;
+  raf = busy ? requestAnimationFrame(frame) : 0;
+}
+function wake() { if (!raf) { last = performance.now(); raf = requestAnimationFrame(frame); } }
+
+/* ───────────────────────── sound ───────────────────────── */
+const Sound = {
+  on: false, ctx: null, lastTick: 0,
+  ensure() {
+    if (!this.ctx) { const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null; this.ctx = new AC(); }
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+    return this.ctx;
+  },
+  tick(pitch = 1) {
+    if (!this.on) return;
+    const now = performance.now(); if (now - this.lastTick < 28) return; this.lastTick = now;
+    const c = this.ensure(); if (!c) return;
+    const t = c.currentTime, o = c.createOscillator(), g = c.createGain();
+    o.type = 'triangle'; o.frequency.setValueAtTime(2100 * pitch, t); o.frequency.exponentialRampToValueAtTime(820 * pitch, t + .035);
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.045, t + .004); g.gain.exponentialRampToValueAtTime(.0001, t + .06);
+    o.connect(g).connect(c.destination); o.start(t); o.stop(t + .07);
+  },
+  chime() {
+    if (!this.on) return;
+    const c = this.ensure(); if (!c) return;
+    [659.25, 987.77, 1318.51].forEach((f, i) => {
+      const t = c.currentTime + i * .075, o = c.createOscillator(), g = c.createGain();
+      o.type = 'sine'; o.frequency.value = f;
+      g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.06, t + .01); g.gain.exponentialRampToValueAtTime(.0001, t + .9);
+      o.connect(g).connect(c.destination); o.start(t); o.stop(t + 1);
+    });
+  },
+};
+$('#snd').addEventListener('click', (e) => {
+  Sound.on = !Sound.on;
+  e.currentTarget.setAttribute('aria-pressed', String(Sound.on));
+  if (Sound.on) { Sound.ensure(); Sound.tick(1.3); }
+});
+
+/* ───────────────────────── odometer ───────────────────────── */
+function Odo(el, format = fmt) {
+  let shown = '';
+  return {
+    set(n, animate = true) {
+      const next = format(n);
+      el.setAttribute('aria-label', next);
+      const shape = (s) => s.replace(/\d/g, '0');
+      const rebuilt = shape(next) !== shape(shown);
+      if (rebuilt) {
+        el.innerHTML = [...next].map((ch) => /\d/.test(ch)
+          ? '<span class="od-d" aria-hidden="true"><span class="od-s">' + '0123456789'.split('').map((d) => `<span>${d}</span>`).join('') + '</span></span>'
+          : `<span class="od-p" aria-hidden="true">${ch}</span>`).join('');
+      }
+      const still = !animate || !shown || REDUCE;
+      if (still) el.classList.add('od-now');
+      if (rebuilt && !still) void el.offsetWidth;
+      const strips = el.querySelectorAll('.od-s');
+      [...next].filter((ch) => /\d/.test(ch)).forEach((ch, k) => {
+        strips[k].style.transitionDelay = still ? '0ms' : `${k * 45}ms`;
+        strips[k].style.transform = `translateY(${-Number(ch) * 10}%)`;
+      });
+      if (still) requestAnimationFrame(() => requestAnimationFrame(() => el.classList.remove('od-now')));
+      shown = next;
+    },
+  };
+}
+
+/* ───────────────────────── garment flats ───────────────────────── */
+// Technical flats drawn on a 240 × 240 grid, recoloured live from each swatch.
+const SOLE = [['M44 186 L204 186 Q209 186 208 191 L206 194 L44 194 Z', 'sole'], ['M44 186 L76 186 L76 198 L46 198 Z', 'heel']];
+const LOOPS = (xs) => xs.map((x) => [`M${x} 27 h5 v21 h-5 Z`, 'loop']);
+const SHAPES = {
+  tee: {
+    vb: '10 12 220 220',
+    body: 'M98 32 Q120 37 142 32 L170 40 L206 76 L188 98 L168 86 L170 206 Q120 211 70 206 L72 86 L52 98 L34 76 L70 40 Z',
+    over: [['M98 32 Q120 37 142 32 C135 47 105 47 98 32 Z', 'inner']],
+    seam: ['M93 33.4 C101 54 139 54 147 33.4', 'M70 40 Q77 64 72 86', 'M170 40 Q163 64 168 86'],
+    stitch: ['M37.9 72.8 L55.9 94.8', 'M202.1 72.8 L184.1 94.8', 'M71 199 Q120 204 169 199'],
+    fold: ['M100 120 Q95 160 101 198', 'M146 112 Q151 150 144 192', 'M58 80 Q64 84 68 92', 'M182 80 Q176 84 172 92'],
+  },
+  oversized: {
+    vb: '6 10 228 228',
+    body: 'M96 30 Q120 35 144 30 L176 40 Q196 52 214 96 L190 108 L178 88 L180 212 Q120 217 60 212 L62 88 L50 108 L26 96 Q44 52 64 40 Z',
+    over: [['M96 30 Q120 35 144 30 C137 45 103 45 96 30 Z', 'inner']],
+    seam: ['M90 31.9 C98 52 142 52 150 31.9', 'M58 46 Q68 68 62 88', 'M182 46 Q172 68 178 88'],
+    stitch: ['M28.2 91.5 L52.2 103.5', 'M211.8 91.5 L187.8 103.5', 'M61 205 Q120 210 179 205'],
+    fold: ['M92 100 Q86 150 94 204', 'M150 96 Q156 150 148 202', 'M40 82 Q48 88 52 100', 'M200 82 Q192 88 188 100', 'M120 150 Q116 176 122 206'],
+  },
+  scoop: {
+    vb: '14 8 212 212', tex: 'rib',
+    body: 'M100 30 Q120 34 140 30 L164 38 L190 66 L176 84 L160 76 Q156 120 164 150 L166 204 Q120 209 74 204 L76 150 Q84 120 80 76 L64 84 L50 66 L76 38 Z',
+    over: [['M100 30 Q120 34 140 30 C138 62 102 62 100 30 Z', 'inner']],
+    seam: ['M94 32 C95 71 145 71 146 32', 'M76 38 Q83 58 80 76', 'M164 38 Q157 58 160 76'],
+    stitch: ['M53.9 62.9 L67.9 80.9', 'M186.1 62.9 L172.1 80.9', 'M75 197 Q120 202 165 197'],
+    fold: ['M104 110 Q100 150 104 190', 'M138 106 Q142 150 136 186'],
+  },
+  tank: {
+    vb: '14 14 212 212', tex: 'rib',
+    body: 'M94 28 L106 28 Q120 44 134 28 L146 28 C148 62 158 84 166 96 L168 206 Q120 211 72 206 L74 96 C82 84 92 62 94 28 Z',
+    over: [['M106 28 Q120 44 134 28 C132 62 108 62 106 28 Z', 'inner']],
+    stitch: ['M99 30 C97 63 88 85 80 97', 'M141 30 C143 63 152 85 160 97', 'M110.5 30 C112 56 128 56 129.5 30', 'M73 199 Q120 204 167 199'],
+    fold: ['M100 120 Q96 160 101 198', 'M142 116 Q147 150 140 192'],
+  },
+  halter: {
+    vb: '14 -8 212 212', tex: 'rib',
+    body: 'M106 22 L134 22 L134 30 C146 58 160 82 166 96 L166 168 Q120 173 74 168 L74 96 C80 82 94 58 106 30 Z',
+    over: [['M106 22 L134 22 L134 30 L106 30 Z', 'tone']],
+    seam: ['M120 30 L120 44'],
+    stitch: ['M110 33 C99 58 87 80 80 95', 'M130 33 C141 58 153 80 160 95', 'M75 161 Q120 166 165 161'],
+    fold: ['M104 70 Q112 100 106 150', 'M136 70 Q128 100 134 150', 'M120 54 L120 158'],
+  },
+  waistcoat: {
+    vb: '14 10 212 212', tex: 'linen',
+    body: 'M90 30 L104 26 Q120 32 136 26 L150 30 C152 60 160 80 168 92 L168 184 L122 206 L120 201 L118 206 L72 184 L72 92 C80 80 88 60 90 30 Z',
+    over: [['M104 26 Q120 32 136 26 L120 116 Z', 'inner']],
+    seam: ['M120 116 L120 201', 'M82 156 L104 152', 'M136 152 L158 156'],
+    stitch: ['M95 32 C93 62 84 82 77 94', 'M145 32 C147 62 156 82 163 94', 'M77 181 L117 199', 'M163 181 L123 199', 'M107 31 L120 104', 'M133 31 L120 104', 'M82 159.5 L104 155.5', 'M136 155.5 L158 159.5'],
+    dots: [[125, 128, 2.6, 'button'], [125, 146, 2.6, 'button'], [125, 164, 2.6, 'button'], [125, 182, 2.6, 'button']],
+    fold: ['M96 120 Q92 150 98 176', 'M146 120 Q150 150 144 176'],
+  },
+  widejeans: {
+    vb: '14 14 212 212', tex: 'twill',
+    body: 'M78 30 L162 30 L164 46 L180 212 L128 214 L120 98 L112 214 L60 212 L76 46 Z',
+    over: LOOPS([84, 106, 129, 151]),
+    seam: ['M77 45 L163 45', 'M96 45 Q95 63 78.6 68', 'M144 45 Q145 63 161.4 68', 'M120 45 L120 98'],
+    top: ['M79 33.5 L161 33.5', 'M77.5 42 L162.5 42', 'M112 45 L112 82 Q112 90 120 93', 'M92 46 Q91 60 78.3 64', 'M148 46 Q149 60 161.7 64', 'M62 205 L111 207', 'M129 207 L178 205', 'M124 99 L130.5 210', 'M116 99 L109.5 210'],
+    dots: [[120, 37.5, 3.2, 'metal'], [84, 63.5, 1.5, 'metal'], [156, 63.5, 1.5, 'metal']],
+    hi: ['M100 104 L86 108', 'M100 111 L89 117', 'M140 104 L154 108', 'M140 111 L151 117'],
+    fold: ['M90 120 Q86 170 88 208', 'M152 120 Q156 170 152 208'],
+  },
+  trousers: {
+    vb: '14 14 212 212', tex: 'linen',
+    body: 'M80 30 L160 30 L161 48 L172 212 L126 214 L120 100 L114 214 L68 212 L79 48 Z',
+    over: [['M80 30 L160 30 L161 48 L79 48 Z', 'tone']],
+    gathers: [84, 156, 5, 32, 46],
+    seam: ['M84.5 50 L78.5 84', 'M155.5 50 L161.5 84', 'M120 48 L120 100'],
+    cord: ['M117 41 C114 52 111 60 108 70', 'M123 41 C126 53 129 61 133 71', 'M120 41 C111 35 106 43 116 43', 'M120 41 C129 35 134 43 124 43'],
+    stitch: ['M69 205 L113 207', 'M127 207 L171 205'],
+    crease: ['M97 112 L92 208', 'M143 112 L148 208'],
+  },
+  joggers: {
+    vb: '14 14 212 212',
+    body: 'M82 30 L158 30 L159 52 Q168 120 172 210 L127 213 L120 102 L113 213 L68 210 Q72 120 81 52 Z',
+    over: [['M82 30 L158 30 L159 52 L81 52 Z', 'tone', 'rib']],
+    seam: ['M88 54 L80 88', 'M152 54 L160 88', 'M120 52 L120 102'],
+    cord: ['M116 46 Q113 60 110 72', 'M124 46 Q127 60 131 73'],
+    dots: [[110, 74, 1.9, 'aglet'], [131, 75, 1.9, 'aglet']],
+    stitch: ['M69 203 L113 206', 'M127 206 L171 203'],
+    fold: ['M88 130 Q96 146 90 170', 'M152 130 Q144 146 150 170', 'M100 180 Q104 196 98 208', 'M140 180 Q136 196 142 208'],
+  },
+  tailored: {
+    vb: '14 14 212 212',
+    body: 'M80 30 L160 30 L161 46 L174 212 L127 214 L120 100 L113 214 L66 212 L79 46 Z',
+    over: LOOPS([87, 148]),
+    seam: ['M79 45 L161 45', 'M120 30 L120 45', 'M86 47 L80 78', 'M154 47 L160 78', 'M120 45 L120 100', 'M100 45 L101 76', 'M140 45 L139 76'],
+    stitch: ['M114 46 L114 84 Q114 92 120 94', 'M67 205 L112 207', 'M128 207 L173 205'],
+    dots: [[124, 38, 2.4, 'button']],
+    crease: ['M101 76 L95 210', 'M139 76 L145 210'],
+  },
+  shorts: {
+    vb: '14 -28 212 212', tex: 'twill',
+    body: 'M80 30 L160 30 L162 46 L172 124 L126 130 L120 98 L114 130 L68 124 L78 46 Z',
+    over: [['M69.3 114 L115.9 120 L114 130 L68 124 Z', 'light'], ['M170.7 114 L124.1 120 L126 130 L172 124 Z', 'light'], ...LOOPS([86, 107, 128, 149])],
+    seam: ['M78 45 L162 45', 'M97 45 Q96 61 80.3 66', 'M143 45 Q144 61 159.7 66', 'M120 45 L120 98'],
+    top: ['M80 33.5 L160 33.5', 'M78.5 42 L161.5 42', 'M113 45 L113 80 Q113 88 120 91', 'M93 46 Q92 58 80.6 62', 'M147 46 Q148 58 159.4 62'],
+    dots: [[120, 37.5, 3.2, 'metal']],
+    hi: ['M100 102 L90 106', 'M140 102 L150 106'],
+  },
+  satin: {
+    vb: '14 14 212 212', sheen: true,
+    body: 'M80 30 L160 30 L161 48 L172 212 L126 214 L120 100 L114 214 L68 212 L79 48 Z',
+    over: [['M80 30 L160 30 L161 48 L79 48 Z', 'tone']],
+    gathers: [84, 156, 5, 32, 46],
+    seam: ['M120 48 L120 100'],
+    cord: ['M117 41 C114 52 111 60 108 70', 'M123 41 C126 53 129 61 133 71', 'M120 41 C111 35 106 43 116 43', 'M120 41 C129 35 134 43 124 43'],
+    fold: ['M96 112 Q90 160 94 208', 'M144 112 Q150 160 146 208', 'M108 130 Q104 170 108 210'],
+  },
+  cargo: {
+    vb: '14 14 212 212', tex: 'twill',
+    body: 'M80 30 L160 30 L161 46 L174 212 L127 214 L120 100 L113 214 L66 212 L79 46 Z',
+    over: [['M74 118 L98 116 L99 156 L76 158 Z', 'tone'], ['M73 112 L99 110 L99 123 L74 125 Z', 'tone2'], ['M166 118 L142 116 L141 156 L164 158 Z', 'tone'], ['M167 112 L141 110 L141 123 L166 125 Z', 'tone2'], ...LOOPS([87, 148])],
+    seam: ['M79 45 L161 45', 'M86 47 L80 78', 'M154 47 L160 78', 'M120 45 L120 100'],
+    stitch: ['M114 46 L114 84 Q114 92 120 94', 'M67 205 L112 207', 'M128 207 L173 205', 'M77 152 L98 150', 'M163 152 L142 150'],
+    dots: [[124, 38, 2.4, 'button'], [86, 119, 1.7, 'button'], [154, 119, 1.7, 'button']],
+    fold: ['M100 170 Q96 190 100 208', 'M140 170 Q144 190 140 208'],
+  },
+  loafer: {
+    vb: '18 62 204 204', pair: true,
+    under: SOLE,
+    body: 'M48 186 L46 150 Q47 140 58 140 Q84 150 112 146 Q150 140 182 156 Q204 168 204 182 L202 186 Z',
+    over: [['M56 141.5 Q84 151.5 113 146.5 Q84 158 56 148 Z', 'inner'], ['M106 150 Q132 168 160 150 L162 159 Q132 177 104 159 Z', 'tone'], ['M126 161 Q132 156 138 161 Q132 166 126 161 Z', 'inner']],
+    stitch: ['M116 147 Q160 136 197 168', 'M50 183 L201 183'],
+    hi: ['M166 158 Q186 162 197 174'],
+  },
+  chelsea: {
+    vb: '19 26 204 204', pair: true,
+    under: [['M48 188 L204 188 Q209 188 208 193 L206 196 L48 196 Z', 'sole'], ['M48 188 L80 188 L80 201 L50 201 Z', 'heel']],
+    body: 'M52 188 L50 92 Q50 84 58 84 L108 84 Q116 84 116 92 L118 138 Q152 142 184 158 Q204 168 204 182 L202 188 Z',
+    over: [['M80 86 L92 134 L104 86 Z', 'tone', 'rib'], ['M47 90 L47 72 Q47 66 53 66 L55 66 Q61 66 61 72 L61 90 Z', 'tone']],
+    seam: ['M118 138 Q112 160 120 186'],
+    stitch: ['M54 185 L201 185', 'M53 89 L113 89'],
+    hi: ['M166 158 Q186 162 197 174', 'M64 100 L64 170'],
+  },
+  trainer: {
+    vb: '18 46 204 204', pair: true, tex: 'linen',
+    under: [['M44 170 L206 170 Q212 170 211 178 L208 186 Q206 190 200 190 L50 190 Q44 190 44 184 Z', 'rubber']],
+    body: 'M50 172 L50 138 Q52 128 62 128 Q88 136 104 132 Q136 126 160 140 Q190 152 202 166 L202 172 Z',
+    over: [['M168 150 Q194 158 204 171 L178 171 Q172 162 160 156 Z', 'rubber'], ['M92 133 Q98 116 116 120 L120 131 Z', 'tone'], ['M50 140 L45 140 Q42 140 42 143 L42 166 L50 166 Z', 'tone']],
+    stripe: ['M46 179 L209 179'],
+    seam: ['M62 130 Q74 150 72 170'],
+    dots: [[100, 137, 1.6, 'eyelet'], [112, 134, 1.6, 'eyelet'], [124, 134, 1.6, 'eyelet'], [136, 137, 1.6, 'eyelet'], [148, 142, 1.6, 'eyelet']],
+    lace: ['M98 139 L114 132', 'M110 136 L126 132', 'M122 136 L138 135', 'M134 139 L150 140'],
+    stitch: ['M54 167 L198 167'],
+  },
+  espadrille: {
+    vb: '20 61 204 204', pair: true, tex: 'linen',
+    under: [['M46 176 L206 176 Q212 177 210 184 L208 190 L48 190 Q44 190 45 184 Z', 'jute', 'jute'], ['M48 190 L208 190 L207 195 L49 195 Z', 'sole']],
+    body: 'M54 177 L54 156 Q56 148 66 150 Q90 160 104 152 Q140 142 170 150 Q196 158 204 172 L204 177 Z',
+    over: [['M62 151.5 Q90 162 106 153 Q90 166 62 156 Z', 'inner']],
+    stitch: ['M58 173 L200 173'],
+    hi: ['M166 156 Q188 162 197 170'],
+  },
+  derby: {
+    vb: '18 60 204 204', pair: true,
+    under: SOLE,
+    body: 'M48 186 L46 146 Q47 138 58 138 Q80 146 98 140 Q140 132 176 152 Q204 166 204 182 L202 186 Z',
+    over: [['M58 139 Q80 147 98 141 Q80 152 58 145 Z', 'inner'], ['M96 140 Q104 158 122 160 Q146 160 160 148 Q144 138 128 136 Q110 136 96 140 Z', 'tone']],
+    seam: ['M168 151 Q176 166 178 184', 'M60 142 Q70 164 64 184'],
+    dots: [[108, 142, 1.5, 'eyelet'], [118, 140, 1.5, 'eyelet'], [128, 140, 1.5, 'eyelet'], [138, 141, 1.5, 'eyelet']],
+    lace: ['M106 145 L120 139', 'M116 143 L130 139', 'M126 143 L140 140'],
+    stitch: ['M50 183 L201 183', 'M100 143 Q107 156 122 157 Q143 157 155 148'],
+    hi: ['M176 160 Q190 166 197 176'],
+  },
+};
+function flatSVG(type, hex) {
+  const s = SHAPES[type];
+  const g = '#' + hex;
+  const P = (d, c) => `<path class="${c}" d="${d}"/>`;
+  const shape = ([d, c, tx]) => P(d, c) + (tx ? `<path d="${d}" fill="url(#tx-${tx})"/>` : '');
+  const base = () => {
+    let o = (s.under || []).map(shape).join('');
+    o += P(s.body, 'fill');
+    if (s.tex) o += `<path d="${s.body}" fill="url(#tx-${s.tex})"/>`;
+    o += `<path d="${s.body}" fill="url(#${s.sheen ? 'g-sheen' : 'g-shade'})"/>`;
+    o += P(s.body, 'edge');
+    o += (s.over || []).map(shape).join('');
+    return o;
+  };
+  let o = `<svg class="flat" viewBox="${s.vb}" style="--g:${g};--l:${lineFor(g)}" aria-hidden="true" focusable="false">`;
+  if (s.pair) o += `<g transform="translate(-14 -11)">${base()}<path class="shadowed" d="${s.body}"/></g>`;
+  o += base();
+  if (s.gathers) { const [a, b, step, y1, y2] = s.gathers; for (let x = a; x <= b; x += step) o += P(`M${x} ${y1} L${x} ${y2}`, 'fold'); }
+  for (const k of ['fold', 'crease', 'seam', 'stitch', 'top', 'hi', 'cord', 'lace', 'stripe']) for (const d of s[k] || []) o += P(d, k);
+  for (const [cx, cy, r, c] of s.dots || []) o += `<circle class="${c}" cx="${cx}" cy="${cy}" r="${r}"/>`;
+  return o + '</svg>';
+}
+function recolour(svg, hex) { const g = '#' + hex; svg.style.setProperty('--g', g); svg.style.setProperty('--l', lineFor(g)); }
+
+/* ───────────────────────── catalogue lookups ───────────────────────── */
+const N = { t: CAT.tops.length, b: CAT.bottoms.length, s: CAT.shoes.length, f: CAT.full.length };
+const SEPARATES = N.t * N.b * N.s;
+const TOTAL_LOOKS = SEPARATES + N.f * N.s;
+function articleIndex(key, item, swIdx) {
+  const rows = CAT[key], hex = item.sw[swIdx][1].toUpperCase();
+  let i = rows.findIndex((r) => r[0] === item.n && r[2] === hex);
+  if (i < 0) i = rows.findIndex((r) => r[0] === item.n);
+  return Math.max(0, i);
+}
+const lookNo = (L) => (L.full ? SEPARATES + L.f * N.s + L.s : L.t * N.b * N.s + L.b * N.s + L.s) + 1;
+
+/* ───────────────────────── hero panels ───────────────────────── */
+const SPRING = { k: 300, c: 30, m: .85 }; // the app's own band spring
+const SWIPE_THRESHOLD = 42;               // and its swipe threshold, in px
+
+class Band {
+  constructor(el, key, bi) {
+    Object.assign(this, { el, key, bi, items: DEMO[key], pitch: [1, 1.12, 1.26][bi] });
+    this.n = this.items.length;
+    this.stage = $('.band-stage', el); this.meta = $('.band-meta', el); this.big = $('.band-big', el);
+    $('.cnt', el).textContent = `· ${N[key[0]]} in the catalogue`;
+    this.pos = 0; this.target = 0; this.vel = 0; this.mode = 'idle'; this.shown = 0; this.settled = 0;
+    this.colour = this.items.map(() => 0);
+    this.size = this.items.map((it) => { const i = it.sz.indexOf('M'); return i >= 0 && !(it.oos || []).includes('M') ? i : it.sz.findIndex((z) => !(it.oos || []).includes(z)); });
+    this.slots = this.items.map((it) => {
+      const d = document.createElement('div'); d.className = 'slot';
+      d.innerHTML = flatSVG(it.t, it.sw[0][1]); this.stage.append(d); return d;
+    });
+    this.buildMeta(); this.measure(); this.fillMeta(false); this.render(); this.bind();
+    tasks.add((dt) => this.step(dt));
+  }
+  get index() { return mod(Math.round(this.target), this.n); }
+  get item() { return this.items[this.index]; }
+  selection() {
+    const i = this.index, it = this.items[i], c = this.colour[i];
+    return { key: this.key, item: it, colour: it.sw[c], hex: it.sw[c][1], size: it.sz[this.size[i]], art: articleIndex(this.key, it, c) };
+  }
+  measure() {
+    const w = this.stage.clientWidth;
+    this.spacing = innerWidth <= 760 ? clamp(w * .64, 160, 320) : clamp(w * .42, 170, 320);
+  }
+  buildMeta() {
+    const role = ROLE[this.key].toLowerCase();
+    this.meta.innerHTML = `
+      <div class="pm-top">
+        <button class="pm-arrow" type="button" data-dir="-1" aria-label="Previous ${role}">${ICON.left}</button>
+        <span class="pm-count"><b></b> / ${pad2(this.n)}</span>
+        <button class="pm-arrow" type="button" data-dir="1" aria-label="Next ${role}">${ICON.right}</button>
+      </div>
+      <div class="pm-swap"><h3 class="pm-name"></h3><p class="pm-sub"><span class="pm-price"></span><span class="pm-colour"></span></p></div>
+      <div class="pm-swatches" role="radiogroup" aria-label="Colour"></div>
+      <div class="pm-sizes" role="radiogroup" aria-label="Size"></div>`;
+    this.m = { count: $('.pm-count b', this.meta), swap: $('.pm-swap', this.meta), name: $('.pm-name', this.meta), price: $('.pm-price', this.meta), colour: $('.pm-colour', this.meta), sw: $('.pm-swatches', this.meta), sz: $('.pm-sizes', this.meta) };
+    this.meta.addEventListener('click', (e) => {
+      const a = e.target.closest('.pm-arrow'); if (a) return this.go(Number(a.dataset.dir));
+      const sw = e.target.closest('.sw'); if (sw) return this.setColour(Number(sw.dataset.i));
+      const sz = e.target.closest('.sz'); if (sz && !sz.disabled) return this.setSize(Number(sz.dataset.i));
+    });
+  }
+  fillMeta(animate = true, i = this.shown) {
+    const it = this.items[i], c = this.colour[i];
+    this.m.count.textContent = pad2(i + 1);
+    this.m.name.textContent = it.n;
+    this.m.price.textContent = inr(it.p);
+    this.m.colour.textContent = it.sw[c][0];
+    this.m.sw.innerHTML = it.sw.map(([name, hex], k) => `<button class="sw" type="button" role="radio" data-i="${k}" style="--c:#${hex}" aria-checked="${k === c}" aria-label="${esc(name)}" title="${esc(name)}"></button>`).join('');
+    this.m.sz.innerHTML = it.sz.map((z, k) => { const out = (it.oos || []).includes(z); return `<button class="sz" type="button" role="radio" data-i="${k}" aria-checked="${k === this.size[i]}" ${out ? 'disabled aria-label="' + z + ', sold out"' : ''}>${z}</button>`; }).join('');
+    if (animate && !REDUCE) { this.m.swap.classList.remove('in'); void this.m.swap.offsetWidth; this.m.swap.classList.add('in'); }
+  }
+  setColour(k) {
+    const i = this.index; if (this.colour[i] === k) return;
+    this.colour[i] = k;
+    recolour($('svg', this.slots[i]), this.items[i].sw[k][1]);
+    $$('.sw', this.m.sw).forEach((b, j) => b.setAttribute('aria-checked', String(j === k)));
+    this.m.colour.textContent = this.items[i].sw[k][0];
+    Sound.tick(1.5); App.lookChanged();
+  }
+  setSize(k) {
+    this.size[this.index] = k;
+    $$('.sz', this.m.sz).forEach((b, j) => b.setAttribute('aria-checked', String(j === k)));
+    Sound.tick(1.7);
+  }
+  go(dir) { this.mode = 'spring'; this.target = Math.round(this.target) + dir; wake(); }
+  shuffle(delay = 0, landOn = null) {
+    const cur = this.index;
+    let to = landOn ?? Math.floor(Math.random() * this.n);
+    if (landOn == null && to === cur) to = (to + 1 + Math.floor(Math.random() * (this.n - 1))) % this.n;
+    const spins = this.n * (2 + this.bi) + mod(to - cur, this.n);
+    const from = this.pos, dest = Math.round(this.target) + spins;
+    this.target = dest; this.vel = 0;
+    this.tween = { from, to: dest, t0: performance.now() + delay, dur: REDUCE ? 1 : 1050 + this.bi * 320 };
+    this.mode = 'tween'; this.wasSpinning = true; this.el.classList.add('is-spinning'); wake();
+  }
+  step(dt) {
+    if (this.mode === 'idle' || this.mode === 'drag') return this.mode === 'drag';
+    if (this.mode === 'tween') {
+      const tw = this.tween, k = clamp((performance.now() - tw.t0) / tw.dur, 0, 1);
+      const e = 1 - Math.pow(1 - k, 4);
+      this.pos = lerp(tw.from, tw.to, e);
+      if (k >= 1) { this.pos = tw.to; this.mode = 'spring'; this.vel = 0; }
+    } else {
+      const acc = (SPRING.k * (this.target - this.pos) - SPRING.c * this.vel) / SPRING.m;
+      this.vel += acc * dt; this.pos += this.vel * dt;
+      if (Math.abs(this.target - this.pos) < .0006 && Math.abs(this.vel) < .002) { this.pos = this.target; this.vel = 0; this.mode = 'idle'; }
+    }
+    this.render();
+    if (this.mode === 'idle') this.onSettle();
+    return this.mode !== 'idle';
+  }
+  render() {
+    const n = this.n;
+    for (let i = 0; i < n; i++) {
+      const d = wrapD(i - this.pos, n), a = Math.abs(d);
+      const s = 1 - Math.min(a, 1.2) * .2;
+      const o = clamp(1 - (a - .1) * .36, 0, 1);
+      const el = this.slots[i];
+      el.style.transform = `translate3d(${(d * this.spacing).toFixed(2)}px,${(a * a * 6).toFixed(2)}px,0) rotate(${(d * -4).toFixed(2)}deg) scale(${s.toFixed(4)})`;
+      el.style.opacity = o.toFixed(3);
+      el.style.zIndex = String(100 - Math.round(a * 10));
+    }
+    const frac = this.pos - Math.round(this.pos);
+    this.big.style.translate = `${(frac * -22).toFixed(2)}px 0`;
+    const shown = mod(Math.round(this.pos), n);
+    if (shown !== this.shown) {
+      this.shown = shown;
+      if (this.quiet) return;
+      Sound.tick(this.pitch);
+      if (this.mode !== 'tween') this.fillMeta(true, shown);
+      else this.m.count.textContent = pad2(shown + 1);
+    }
+  }
+  onSettle() {
+    this.quiet = false;
+    this.el.classList.remove('is-spinning');
+    if (this.lastSettled !== this.index || this.wasSpinning) this.fillMeta(true, this.index);
+    this.wasSpinning = false;
+    if (this.lastSettled !== this.index) { this.lastSettled = this.index; App.lookChanged(); }
+  }
+  bind() {
+    const el = this.el;
+    el.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0 || e.target.closest('button, a')) return;
+      this.drag = { id: e.pointerId, x0: e.clientX, y0: e.clientY, p0: this.pos, lx: e.clientX, lt: performance.now(), v: 0, on: false };
+    });
+    el.addEventListener('pointermove', (e) => {
+      const d = this.drag; if (!d || d.id !== e.pointerId) return;
+      const dx = e.clientX - d.x0, dy = e.clientY - d.y0;
+      if (!d.on) {
+        if (Math.abs(dx) > 6 && Math.abs(dx) > Math.abs(dy)) {
+          d.on = true; el.setPointerCapture(e.pointerId); el.classList.add('is-drag'); this.mode = 'drag'; Cursor.set('drag', true);
+        } else if (Math.abs(dy) > 10) { this.drag = null; return; } else return;
+      }
+      const now = performance.now(), dt = Math.max(1, now - d.lt);
+      d.v = lerp(d.v, (e.clientX - d.lx) / dt, .35); d.lx = e.clientX; d.lt = now;
+      this.pos = d.p0 - dx / this.spacing; this.render();
+    });
+    const end = (e) => {
+      const d = this.drag; if (!d || d.id !== e.pointerId) return;
+      this.drag = null; el.classList.remove('is-drag'); Cursor.set('drag', false);
+      if (!d.on) return;
+      const dx = e.clientX - d.x0, start = Math.round(d.p0);
+      let to = Math.round(d.p0 - (dx + d.v * 180) / this.spacing);
+      if (to === start && Math.abs(dx) > SWIPE_THRESHOLD) to = start - Math.sign(dx);
+      this.target = clamp(to, start - 3, start + 3);
+      this.vel = clamp(-d.v * 1000 / this.spacing, -30, 30); this.mode = 'spring'; wake();
+    };
+    el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') { e.preventDefault(); this.go(-1); }
+      if (e.key === 'ArrowRight') { e.preventDefault(); this.go(1); }
+    });
+    let acc = 0, lastW = 0;
+    el.addEventListener('wheel', (e) => {
+      if (Math.abs(e.deltaX) <= Math.abs(e.deltaY) || Math.abs(e.deltaX) < 3) return;
+      e.preventDefault(); acc += e.deltaX;
+      const now = performance.now();
+      if (Math.abs(acc) > 50 && now - lastW > 240) { this.go(Math.sign(acc)); acc = 0; lastW = now; }
+    }, { passive: false });
+  }
+}
+
+/* ───────────────────────── the look, the bag ───────────────────────── */
+const App = {
+  bands: [],
+  totalOdo: Odo($('#lb-total')),
+  current() { return this.bands.map((b) => b.selection()); },
+  lookChanged() {
+    const sel = this.current();
+    $('#lb-pieces').textContent = sel.map((s) => s.item.n).join('  ·  ');
+    this.totalOdo.set(sel.reduce((a, s) => a + s.item.p, 0), this.ready);
+    const L = { t: sel[0].art, b: sel[1].art, s: sel[2].art };
+    this.look = L;
+    $('#lb-no-n').textContent = fmt(lookNo(L));
+    $('#lb-pieces').closest('.lookbar').classList.toggle('is-spinning-all', this.bands.some((b) => b.mode === 'tween'));
+    resetAdd();
+  },
+  shuffle() { this.bands.forEach((b) => b.shuffle(b.bi * 90)); $('#lookbar').classList.add('is-spinning-all'); },
+};
+$('#lb-of').textContent = fmt(TOTAL_LOOKS);
+
+const Bag = {
+  items: [],
+  add(sel) {
+    for (const s of sel) this.items.push({ name: s.item.n, colour: s.colour[0], hex: s.hex, size: s.size, price: s.item.p, role: ROLE[s.key] });
+    this.render(true);
+  },
+  render(pop = false) {
+    const n = this.items.length, badge = $('#bag-n');
+    badge.textContent = String(n); badge.classList.toggle('on', n > 0);
+    if (pop) { badge.classList.remove('pop'); void badge.offsetWidth; badge.classList.add('pop'); }
+    $('#bag-btn').setAttribute('aria-label', `Open bag, ${n} ${n === 1 ? 'piece' : 'pieces'}`);
+    $('#dr-body').innerHTML = n ? this.items.map((it, i) => `
+      <div class="dr-item"><i style="--c:#${it.hex}"></i><p>${esc(it.name)}<small>${esc(it.role)} · ${esc(it.colour)} · ${esc(it.size)}</small></p><b>${inr(it.price)}</b><button type="button" data-rm="${i}" aria-label="Remove ${esc(it.name)}">${ICON.x}</button></div>`).join('')
+      : '<p class="dr-empty">Your bag is empty. Build a look in the panels and press Add outfit.</p>';
+    $('#dr-sub').textContent = inr(this.items.reduce((a, it) => a + it.price, 0));
+    $('#dr-clear').disabled = !n;
+  },
+};
+$('#dr-body').addEventListener('click', (e) => { const b = e.target.closest('[data-rm]'); if (b) { Bag.items.splice(Number(b.dataset.rm), 1); Bag.render(); } });
+$('#dr-clear').addEventListener('click', () => { Bag.items = []; Bag.render(); });
+const drawer = $('#drawer'), scrim = $('#scrim');
+function openBag(open) {
+  drawer.classList.toggle('open', open); scrim.classList.toggle('open', open);
+  drawer.inert = !open;
+  if (open) $('#drawer-x').focus(); else $('#bag-btn').focus({ preventScroll: true });
+}
+$('#bag-btn').addEventListener('click', () => openBag(true));
+$('#drawer-x').addEventListener('click', () => openBag(false));
+scrim.addEventListener('click', () => openBag(false));
+addEventListener('keydown', (e) => { if (e.key === 'Escape' && drawer.classList.contains('open')) openBag(false); });
+
+let addTimer = 0;
+function resetAdd() { const b = $('#add'); if (b.classList.contains('is-added')) { clearTimeout(addTimer); b.classList.remove('is-added'); $('#add-l').textContent = 'Add outfit'; } }
+$('#add').addEventListener('click', () => {
+  const b = $('#add'); if (b.classList.contains('is-added')) return openBag(true);
+  Bag.add(App.current()); Sound.chime();
+  b.classList.add('is-added'); $('#add-l').textContent = 'In your bag';
+  clearTimeout(addTimer); addTimer = setTimeout(resetAdd, 2600);
+});
+$('#shuffle').addEventListener('click', () => App.shuffle());
+addEventListener('keydown', (e) => {
+  if (e.metaKey || e.ctrlKey || e.altKey || /input|textarea|select/i.test(document.activeElement?.tagName || '')) return;
+  if (e.key === 's' || e.key === 'S') App.shuffle();
+});
+
+/* ───────────────────────── ticker ───────────────────────── */
+const tickerWords = ['<em>Three panels</em>', 'One look', '<em>Swipe</em>', 'Stack', '<em>Slay</em>', `<span class="num">${N.t + N.b + N.s + N.f}</span> pieces`, `<em><span class="num">${fmt(TOTAL_LOOKS)}</span> looks</em>`, '<span class="num">530</span> colourways'];
+const tickerHTML = tickerWords.map((w) => `<span>${w}</span><b>·</b>`).join('');
+const ticker = $('#ticker'); ticker.innerHTML = tickerHTML + tickerHTML;
+const Tick = { x: 0, v: 0, dir: 1, skew: 0, visible: true };
+new IntersectionObserver(([en]) => { Tick.visible = en.isIntersecting; if (en.isIntersecting) wake(); }).observe(ticker);
+tasks.add((dt) => {
+  if (!Tick.visible || REDUCE) return false;
+  const half = ticker.scrollWidth / 2;
+  Tick.v *= .92;
+  Tick.x -= (46 + Math.abs(Tick.v) * .55) * dt * Tick.dir * 1;
+  if (Tick.x <= -half) Tick.x += half; if (Tick.x > 0) Tick.x -= half;
+  Tick.skew = lerp(Tick.skew, clamp(-Tick.v * .012, -7, 7) * Tick.dir, .12);
+  ticker.style.transform = `translate3d(${Tick.x.toFixed(2)}px,0,0) skewX(${Tick.skew.toFixed(2)}deg)`;
+  return true;
+});
+
+/* ───────────────────────── how it works: the phone ───────────────────────── */
+const phone = $('#phone');
+const PH_SP = { tops: 300, bottoms: 300, shoes: 260 };
+phone.innerHTML = `
+  <div class="ph-layer ph-chassis" style="--dz:-40"></div>
+  <div class="ph-layer ph-screen"></div>
+  <div class="ph-layer ph-head" style="--dz:250;--dy:-60">
+    <div class="ph-status"><span>9:41</span><span class="ph-island"></span><span class="ph-sig"><i style="height:5px"></i><i style="height:8px"></i><i style="height:11px"></i></span></div>
+    <div class="ph-greet"><div><p class="ph-hello" id="ph-hello">Hello</p><p class="ph-sub">Build your look</p></div>
+      <div class="ph-icons"><span>${ICON.filter}</span><span>${ICON.bag}<b class="ph-badge" id="ph-badge">3</b></span></div></div>
+    <div class="ph-chips" id="ph-chips"><span class="on">All</span><span>Casual</span><span>Street</span><span>Formal</span><span>Evening</span></div>
+  </div>
+  ${BAND_KEYS.map((k, i) => `
+  <div class="ph-layer ph-band" data-k="${k}" style="--dz:${[180, 110, 40][i]};--dy:${[-24, 0, 24][i]}">
+    <div class="ph-clip">${DEMO[k].map((it) => `<div class="ph-slot">${flatSVG(it.t, it.sw[0][1])}</div>`).join('')}
+      <p class="ph-name"></p><div class="ph-dots">${DEMO[k].map(() => '<i></i>').join('')}</div></div>
+    <span class="ph-tag"><b>${ROLE[k] === 'Shoes' ? 'Shoes' : ROLE[k] + 's'}</b>${N[k[0]]} pieces</span>
+  </div>`).join('')}
+  <div class="ph-layer ph-bar" style="--dz:-10;--dy:150">
+    <div><p class="ph-k">Total</p><p class="ph-total" id="ph-total"></p></div>
+    <span class="ph-add" id="ph-add">Add outfit</span>
+  </div>
+  <span class="ph-tryon" id="ph-tryon">✦ Try it on</span>`;
+const phBands = BAND_KEYS.map((k) => {
+  const el = $(`.ph-band[data-k="${k}"]`, phone);
+  return { k, el, slots: $$('.ph-slot', el), dots: $$('.ph-dots i', el), name: $('.ph-name', el), shown: -1, items: DEMO[k] };
+});
+const how = $('#how'), howStage = $('#how-stage'), steps = $$('#steps .step'), meter = $$('#how-meter i');
+const H = { p: -1, rx: 0, ry: 0, trx: 0, try: 0 };
+const dwell = (x) => Math.floor(x) + smooth(.25, .75, x - Math.floor(x));
+function sizePhone() {
+  const r = howStage.getBoundingClientRect();
+  const s = Math.min((r.height * .9) / 870, (r.width * .94) / 416, 1);
+  $('.phone-scale').style.setProperty('--ps', s.toFixed(4));
+}
+function renderHow() {
+  const r = how.getBoundingClientRect();
+  const p = clamp(-r.top / Math.max(1, r.height - innerHeight), 0, 1);
+  const e = REDUCE ? 0 : smooth(.31, .45, p) * (1 - smooth(.6, .72, p));
+  phone.style.setProperty('--e', e.toFixed(4));
+  H.rx = lerp(H.rx, H.trx * (1 - e), .1); H.ry = lerp(H.ry, H.try * (1 - e), .1);
+  phone.style.setProperty('--rx', H.rx.toFixed(3)); phone.style.setProperty('--ry', H.ry.toFixed(3));
+  const active = p < .34 ? 0 : p < .67 ? 1 : 2;
+  steps.forEach((s, i) => s.classList.toggle('is-on', i === active));
+  meter.forEach((m, i) => m.style.setProperty('--f', clamp(p * 3 - i, 0, 1).toFixed(3)));
+  const speeds = [7, 5, 3.4];
+  let total = 0;
+  phBands.forEach((b, bi) => {
+    const n = b.items.length, pos = dwell(smooth(.02, .3, p) * speeds[bi]) + dwell(smooth(.7, .84, p) * (bi + 1));
+    const sp = PH_SP[b.k];
+    b.slots.forEach((el, i) => { const d = wrapD(i - pos, n); el.style.transform = `translateX(${(d * sp).toFixed(1)}px)`; });
+    const idx = mod(Math.round(pos), n);
+    total += b.items[idx].p;
+    if (idx !== b.shown) {
+      b.shown = idx; b.dots.forEach((d, i) => d.classList.toggle('on', i === idx));
+      b.name.innerHTML = `<b>${esc(b.items[idx].n)}</b>${inr(b.items[idx].p)}`;
+    }
+  });
+  $('#ph-total').textContent = inr(total);
+  const chip = active === 1 ? 1 + Math.min(3, Math.floor(smooth(.36, .64, p) * 4)) : 0;
+  $$('#ph-chips span').forEach((c, i) => c.classList.toggle('on', i === chip));
+  const added = p > .8;
+  $('#ph-add').classList.toggle('on', added); $('#ph-add').textContent = added ? 'Added ✓' : 'Add outfit';
+  $('#ph-badge').classList.toggle('on', added);
+  $('#ph-tryon').classList.toggle('on', p > .88);
+  $('#ph-hello').textContent = ['Hello', 'Bonjour', 'Ciao'][active];
+  H.p = p;
+  return Math.abs(H.rx - H.trx * (1 - e)) > .01 || Math.abs(H.ry - H.try * (1 - e)) > .01;
+}
+let howVisible = false;
+new IntersectionObserver(([en]) => { howVisible = en.isIntersecting; if (howVisible) wake(); }).observe(how);
+tasks.add(() => (howVisible ? renderHow() : false));
+if (FINE) howStage.parentElement.addEventListener('pointermove', (e) => {
+  const r = howStage.getBoundingClientRect();
+  H.try = clamp(((e.clientX - r.left) / r.width - .5) * 14, -8, 8);
+  H.trx = clamp(-((e.clientY - r.top) / r.height - .5) * 10, -6, 6); wake();
+});
+
+/* ───────────────────────── every look: the cloth ───────────────────────── */
+const loom = $('#loom'), hi = $('#loom-hi'), tip = $('#loom-tip'), card = $('#look-card'), loomWrap = $('#loom-wrap');
+const BW = N.b, BH = N.s, COLS = 4, GAP = 4, ROWS = Math.ceil(N.t / COLS);
+const LW = COLS * BW + (COLS - 1) * GAP, HSEP = ROWS * BH + (ROWS - 1) * GAP, FULL_Y = HSEP + 14, LH = FULL_Y + N.s;
+loom.width = LW; loom.height = LH;
+const lctx = loom.getContext('2d');
+const img = lctx.createImageData(LW, LH);
+const RGB = Object.fromEntries(Object.entries(CAT).map(([k, rows]) => [k, rows.map((r) => hexRgb(r[2]))]));
+const OCC = Object.fromEntries(Object.entries(CAT).map(([k, rows]) => [k, rows.map((r) => r[4])]));
+// paint every look once; alpha is set per occasion
+const base = new Uint8ClampedArray(LW * LH * 4);
+const bits = new Uint8Array(LW * LH);
+(function weave() {
+  for (let t = 0; t < N.t; t++) {
+    const ox = (t % COLS) * (BW + GAP), oy = Math.floor(t / COLS) * (BH + GAP), T = RGB.tops[t];
+    for (let b = 0; b < BW; b++) {
+      const B = RGB.bottoms[b], ob = OCC.tops[t] & OCC.bottoms[b];
+      for (let s = 0; s < BH; s++) {
+        const S = RGB.shoes[s], w = ((b + s) & 3) < 2 ? 1.035 : .965, i = (oy + s) * LW + ox + b;
+        base[i * 4] = (T[0] * .5 + B[0] * .36 + S[0] * .14) * w;
+        base[i * 4 + 1] = (T[1] * .5 + B[1] * .36 + S[1] * .14) * w;
+        base[i * 4 + 2] = (T[2] * .5 + B[2] * .36 + S[2] * .14) * w;
+        bits[i] = ob & OCC.shoes[s] | 32;
+      }
+    }
+  }
+  for (let f = 0; f < N.f; f++) {
+    const F = RGB.full[f];
+    for (let s = 0; s < BH; s++) {
+      const S = RGB.shoes[s], w = ((f + s) & 3) < 2 ? 1.035 : .965, i = (FULL_Y + s) * LW + f;
+      base[i * 4] = (F[0] * .82 + S[0] * .18) * w; base[i * 4 + 1] = (F[1] * .82 + S[1] * .18) * w; base[i * 4 + 2] = (F[2] * .82 + S[2] * .18) * w;
+      bits[i] = OCC.full[f] & OCC.shoes[s] | 32;
+    }
+  }
+})();
+const Loom = { occ: 'all', prev: 'all', k: 1, pinned: null, hover: null };
+const occMask = (o) => (o === 'all' ? 32 : BIT[o]);
+function paintLoom() {
+  const d = img.data, a = occMask(Loom.prev), b = occMask(Loom.occ), k = Loom.k;
+  for (let i = 0, n = bits.length; i < n; i++) {
+    const v = bits[i]; if (!v) { d[i * 4 + 3] = 0; continue; }
+    const p = i * 4;
+    d[p] = base[p]; d[p + 1] = base[p + 1]; d[p + 2] = base[p + 2];
+    const fa = v & a ? 255 : 26, fb = v & b ? 255 : 26;
+    d[p + 3] = fa + (fb - fa) * k;
+  }
+  lctx.putImageData(img, 0, 0);
+}
+function hit(e) {
+  const r = loom.getBoundingClientRect();
+  const x = Math.floor(((e.clientX - r.left) / r.width) * LW), y = Math.floor(((e.clientY - r.top) / r.height) * LH);
+  if (y >= FULL_Y && y < FULL_Y + N.s && x >= 0 && x < N.f) return { full: true, f: x, s: y - FULL_Y };
+  const col = Math.floor(x / (BW + GAP)), lx = x - col * (BW + GAP), row = Math.floor(y / (BH + GAP)), ly = y - row * (BH + GAP);
+  if (col < 0 || col >= COLS || lx >= BW || row < 0 || row >= ROWS || ly >= BH) return null;
+  const t = row * COLS + col; return t < N.t ? { t, b: lx, s: ly } : null;
+}
+function lookXY(L) { return L.full ? [L.f, FULL_Y + L.s] : [(L.t % COLS) * (BW + GAP) + L.b, Math.floor(L.t / COLS) * (BH + GAP) + L.s]; }
+function lookParts(L) {
+  return L.full ? [['full', CAT.full[L.f]], ['layer', null], ['shoes', CAT.shoes[L.s]]] : [['tops', CAT.tops[L.t]], ['bottoms', CAT.bottoms[L.b]], ['shoes', CAT.shoes[L.s]]];
+}
+function lookBits(L) { return lookParts(L).reduce((m, [, r]) => (r ? m & r[4] : m), 31); }
+function sizeHi() {
+  const r = loom.getBoundingClientRect(), dpr = Math.min(2, devicePixelRatio || 1);
+  hi.width = Math.round(r.width * dpr); hi.height = Math.round(r.height * dpr); drawHi();
+}
+function drawHi() {
+  const c = hi.getContext('2d'), sx = hi.width / LW, sy = hi.height / LH;
+  c.clearRect(0, 0, hi.width, hi.height);
+  const ink = getComputedStyle(document.body).color;
+  const mark = (L, strong) => {
+    if (!L) return;
+    const [x, y] = lookXY(L);
+    const bx = L.full ? 0 : (L.t % COLS) * (BW + GAP), by = L.full ? FULL_Y : Math.floor(L.t / COLS) * (BH + GAP), bw = L.full ? N.f : BW;
+    c.strokeStyle = ink; c.globalAlpha = strong ? .9 : .5; c.lineWidth = 1;
+    c.strokeRect(Math.round(bx * sx) - .5, Math.round(by * sy) - .5, Math.round(bw * sx) + 1, Math.round(BH * sy) + 1);
+    c.globalAlpha = strong ? .5 : .3;
+    c.beginPath(); c.moveTo(Math.round(bx * sx), Math.round((y + .5) * sy) + .5); c.lineTo(Math.round((bx + bw) * sx), Math.round((y + .5) * sy) + .5);
+    c.moveTo(Math.round((x + .5) * sx) + .5, Math.round(by * sy)); c.lineTo(Math.round((x + .5) * sx) + .5, Math.round((by + BH) * sy)); c.stroke();
+    c.globalAlpha = 1; c.lineWidth = 2;
+    const cx = (x + .5) * sx, cy = (y + .5) * sy, rad = Math.max(5, sx * 2.6);
+    c.beginPath(); c.arc(cx, cy, rad, 0, Math.PI * 2); c.stroke();
+    c.fillStyle = rgbHex(Array.from(base.subarray((y * LW + x) * 4, (y * LW + x) * 4 + 3))); c.fill(); c.stroke();
+  };
+  mark(Loom.pinned, false); mark(Loom.hover, true);
+}
+const OCC_NAMES = ['casual', 'formal', 'street', 'athletic', 'evening'];
+const matchText = (m) => { const names = OCC_NAMES.filter((o) => m & BIT[o]).map((o) => o[0].toUpperCase() + o.slice(1)); return names.length ? names.join(' · ') : 'No shared occasion'; };
+function tipHTML(L) {
+  const parts = lookParts(L), total = parts.reduce((a, [, r]) => a + (r ? r[1] : 0), 0);
+  return `<p class="tip-no"><span>Look No.</span><b>${fmt(lookNo(L))}</b></p>` + parts.map(([k, r]) => r
+    ? `<div class="tip-row"><i style="--c:#${r[2]}"></i><span>${esc(r[0])}</span><b>${inr(r[1])}</b></div>`
+    : '<div class="tip-row"><i style="--c:transparent;box-shadow:inset 0 0 0 1px var(--rule)"></i><span>Layers coming soon</span><b></b></div>').join('')
+    + `<div class="tip-row"><i style="--c:transparent;box-shadow:none"></i><span>Total</span><b>${inr(total)}</b></div>`;
+}
+function renderCard(L) {
+  const parts = lookParts(L), total = parts.reduce((a, [, r]) => a + (r ? r[1] : 0), 0), m = lookBits(L);
+  const occOk = Loom.occ === 'all' || m & BIT[Loom.occ];
+  card.innerHTML = `
+    <div class="lc-head"><p class="eyebrow">Pinned look</p><p class="lc-no"><small>No.</small>${fmt(lookNo(L))}</p></div>
+    <div class="lc-panels" aria-hidden="true">${parts.map(([, r]) => (r ? `<i style="--c:#${r[2]}"></i>` : '<i class="none"></i>')).join('')}</div>
+    <ul class="lc-list">${parts.map(([k, r]) => `<li><span class="lc-role">${k === 'layer' ? 'Layer' : ROLE[k]}</span>${r
+      ? `<span class="lc-name">${esc(r[0])}<small>${esc(r[3])}</small></span><span class="lc-price">${inr(r[1])}</span>`
+      : '<span class="lc-name">Layers coming soon<small>The third band in a full look</small></span><span class="lc-price">—</span>'}</li>`).join('')}</ul>
+    <p class="lc-total"><span>Total</span><b>${inr(total)}</b></p>
+    <p class="lc-match">Occasions: <b>${matchText(m)}</b>${occOk ? '' : ` · outside ${Loom.occ}`}</p>
+    <div class="lc-actions"><button class="btn btn-line" type="button" id="lc-random" data-magnetic>Random look</button></div>`;
+  $('#lc-random').addEventListener('click', randomLook);
+}
+function pin(L) { Loom.pinned = L; renderCard(L); drawHi(); }
+function randomLook() {
+  const m = occMask(Loom.occ);
+  for (let tries = 0; tries < 4000; tries++) {
+    const i = Math.floor(Math.random() * bits.length);
+    if (bits[i] & m) { const y = Math.floor(i / LW), x = i % LW; const L = hitXY(x, y); if (L) { pin(L); Sound.tick(1.4); return; } }
+  }
+}
+function hitXY(x, y) {
+  if (y >= FULL_Y) return x < N.f ? { full: true, f: x, s: y - FULL_Y } : null;
+  const col = Math.floor(x / (BW + GAP)), lx = x - col * (BW + GAP), row = Math.floor(y / (BH + GAP)), ly = y - row * (BH + GAP);
+  if (lx >= BW || ly >= BH) return null; const t = row * COLS + col; return t < N.t ? { t, b: lx, s: ly } : null;
+}
+let lastHoverKey = '';
+loomWrap.addEventListener('pointermove', (e) => {
+  if (e.pointerType !== 'mouse') return;
+  const L = hit(e); Loom.hover = L;
+  if (!L) { tip.hidden = true; lastHoverKey = ''; drawHi(); return; }
+  const key = JSON.stringify(L);
+  if (key !== lastHoverKey) { tip.innerHTML = tipHTML(L); lastHoverKey = key; Sound.tick(2.2); }
+  tip.hidden = false;
+  const r = loomWrap.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+  const tx = x + 18 + 236 > r.width ? x - 18 - 236 : x + 18, ty = clamp(y - 60, 0, r.height - tip.offsetHeight);
+  tip.style.transform = `translate(${tx}px, ${ty}px)`;
+  drawHi();
+});
+loomWrap.addEventListener('pointerleave', () => { Loom.hover = null; tip.hidden = true; lastHoverKey = ''; drawHi(); });
+loomWrap.addEventListener('click', (e) => { const L = hit(e); if (L) { pin(L); Sound.tick(1.2); } });
+
+const odo = { pieces: Odo($('#n-pieces')), looks: Odo($('#n-looks')), t: Odo($('#eq-t')), b: Odo($('#eq-b')), s: Odo($('#eq-s')), f: Odo($('#eq-f')), s2: Odo($('#eq-s2')) };
+function counts(o) {
+  const m = occMask(o), c = (k) => (o === 'all' ? N[k[0]] : OCC[k].filter((v) => v & m).length);
+  const t = c('tops'), b = c('bottoms'), s = c('shoes'), f = c('full');
+  return { t, b, s, f, pieces: t + b + s + f, looks: t * b * s + f * s };
+}
+function setOcc(o, animate = true) {
+  const c = counts(o);
+  odo.pieces.set(c.pieces, animate); odo.looks.set(c.looks, animate);
+  odo.t.set(c.t, animate); odo.b.set(c.b, animate); odo.s.set(c.s, animate); odo.f.set(c.f, animate); odo.s2.set(c.s, animate);
+  if (!animate) return;
+  Loom.prev = Loom.occ; Loom.occ = o; Loom.k = 0;
+  const t0 = performance.now();
+  const run = () => { Loom.k = REDUCE ? 1 : clamp((performance.now() - t0) / 520, 0, 1); Loom.k = 1 - Math.pow(1 - Loom.k, 3); paintLoom(); if (Loom.k < 1) requestAnimationFrame(run); else { Loom.prev = o; } };
+  run();
+  if (Loom.pinned) renderCard(Loom.pinned);
+}
+$('#occ').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-occ]'); if (!b || b.getAttribute('aria-checked') === 'true') return;
+  $$('#occ .chip').forEach((c) => c.setAttribute('aria-checked', String(c === b)));
+  setOcc(b.dataset.occ); Sound.tick(1.3);
+});
+$('#lb-no').addEventListener('click', (e) => {
+  e.preventDefault();
+  pin(App.look);
+  $('#looks').scrollIntoView({ behavior: REDUCE ? 'auto' : 'smooth', block: 'start' });
+});
+
+/* ───────────────────────── details ───────────────────────── */
+const vzOdo = Odo($('#vz-total'));
+const vzTotals = [5497, 4697, 6297, 3997, 5297];
+let vzI = 0; vzOdo.set(vzTotals[0], false);
+const live = new Set();
+const io = new IntersectionObserver((ens) => ens.forEach((en) => { en.target.classList.toggle('is-live', en.isIntersecting); if (en.isIntersecting) live.add(en.target); else live.delete(en.target); }), { threshold: .4 });
+$$('.det').forEach((d) => io.observe(d));
+setInterval(() => { if (REDUCE || ![...live].some((d) => d.contains($('#vz-total')))) return; vzI = (vzI + 1) % vzTotals.length; vzOdo.set(vzTotals[vzI]); }, 2200);
+
+/* ───────────────────────── finale: letters lean toward the pointer ───────────────────────── */
+const finWm = $('#fin-wm');
+finWm.innerHTML = '<em>' + [...'Trip'].map((c) => `<span>${c}</span>`).join('') + '</em>' + [...'tych'].map((c) => `<span>${c}</span>`).join('');
+const letters = $$('span', finWm);
+letters.forEach((l) => l.setAttribute('aria-hidden', 'true'));
+if (FINE && !REDUCE) {
+  $('#enter').addEventListener('pointermove', (e) => {
+    letters.forEach((l) => {
+      const r = l.getBoundingClientRect(), dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+      const d = Math.hypot(dx, dy), f = Math.max(0, 1 - d / 420);
+      l.style.transform = `translate(${(dx * f * .06).toFixed(2)}px, ${(-f * 26 + dy * f * .04).toFixed(2)}px)`;
+    });
+  });
+  $('#enter').addEventListener('pointerleave', () => letters.forEach((l) => (l.style.transform = '')));
+}
+
+/* ───────────────────────── enter studio: the splash curtain ───────────────────────── */
+const curtain = $('#curtain'), cword = $('#curtain-word');
+let entering = false;
+function enterStudio(btn) {
+  if (entering) return; entering = true;
+  const r = btn.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  const R = Math.hypot(Math.max(cx, innerWidth - cx), Math.max(cy, innerHeight - cy));
+  curtain.style.left = cx + 'px'; curtain.style.top = cy + 'px';
+  $('#cw-text').textContent = GREETINGS[Math.floor(Math.random() * GREETINGS.length)];
+  Sound.chime();
+  const grow = curtain.animate([{ transform: 'scale(0)' }, { transform: `scale(${(R / 6) * 1.05})` }], { duration: REDUCE ? 1 : 600, easing: 'cubic-bezier(.16,1,.3,1)', fill: 'forwards' });
+  cword.animate([{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], { duration: 420, delay: 260, easing: 'cubic-bezier(.22,.61,.36,1)', fill: 'forwards' });
+  grow.finished.then(() => new Promise((res) => setTimeout(res, 520))).then(() => {
+    document.documentElement.style.scrollBehavior = 'auto';
+    window.scrollTo(0, 0);
+    document.documentElement.style.scrollBehavior = '';
+    const fade = { duration: REDUCE ? 1 : 520, easing: 'cubic-bezier(.22,.61,.36,1)', fill: 'forwards' };
+    cword.animate([{ opacity: 1 }, { opacity: 0 }], fade);
+    return curtain.animate([{ opacity: 1 }, { opacity: 0 }], fade).finished;
+  }).then(() => {
+    curtain.getAnimations().forEach((a) => a.cancel()); cword.getAnimations().forEach((a) => a.cancel());
+    entering = false;
+    App.shuffle();
+    App.bands[0].el.focus({ preventScroll: true });
+  });
+}
+$$('[data-enter]').forEach((b) => b.addEventListener('click', () => enterStudio(b)));
+
+/* ───────────────────────── cursor + magnetic buttons ───────────────────────── */
+const Cursor = {
+  el: $('#cursor'), x: -100, y: -100, rx: -100, ry: -100, forced: {},
+  set(k, v) { this.forced[k] = v; this.apply(); },
+  apply() { const c = this.el.classList; c.toggle('is-drag', !!(this.forced.drag || this.mode === 'drag')); c.toggle('is-link', this.mode === 'link' && !this.forced.drag); c.toggle('is-loom', this.mode === 'loom' && !this.forced.drag); },
+};
+if (FINE && !REDUCE) {
+  document.documentElement.classList.add('has-cursor');
+  const ring = $('.cur-ring', Cursor.el), dot = $('.cur-dot', Cursor.el);
+  addEventListener('pointermove', (e) => {
+    if (e.pointerType !== 'mouse') return;
+    Cursor.x = e.clientX; Cursor.y = e.clientY; Cursor.el.classList.remove('is-hidden');
+    const t = e.target.closest?.('[data-cursor], a, button');
+    const mode = !t ? '' : t.matches('a, button') ? 'link' : t.dataset.cursor;
+    if (mode !== Cursor.mode) { Cursor.mode = mode; Cursor.apply(); }
+    wake();
+  }, { passive: true });
+  document.addEventListener('mouseout', (e) => { if (!e.relatedTarget) Cursor.el.classList.add('is-hidden'); });
+  addEventListener('pointerdown', () => Cursor.el.classList.add('is-down'));
+  addEventListener('pointerup', () => Cursor.el.classList.remove('is-down'));
+  tasks.add(() => {
+    Cursor.rx = lerp(Cursor.rx, Cursor.x, .2); Cursor.ry = lerp(Cursor.ry, Cursor.y, .2);
+    dot.style.transform = `translate3d(${Cursor.x}px,${Cursor.y}px,0)`;
+    ring.style.transform = `translate3d(${Cursor.rx.toFixed(1)}px,${Cursor.ry.toFixed(1)}px,0)`;
+    return Math.abs(Cursor.rx - Cursor.x) > .1 || Math.abs(Cursor.ry - Cursor.y) > .1;
+  });
+  document.addEventListener('pointermove', (e) => {
+    const m = e.target.closest?.('[data-magnetic]');
+    if (Cursor.mag && Cursor.mag !== m) { Cursor.mag.style.translate = ''; Cursor.mag = null; }
+    if (!m) return;
+    const r = m.getBoundingClientRect();
+    m.style.translate = `${((e.clientX - r.left - r.width / 2) * .22).toFixed(1)}px ${((e.clientY - r.top - r.height / 2) * .3).toFixed(1)}px`;
+    Cursor.mag = m;
+  }, { passive: true });
+}
+
+/* ───────────────────────── scroll: nav, mark, ticker velocity ───────────────────────── */
+const nav = $('#nav'), markBars = $$('#nav-mark i');
+let lastY = scrollY;
+function onScroll() {
+  const y = scrollY, dy = y - lastY; lastY = y;
+  nav.classList.toggle('is-scrolled', y > 8);
+  const q = clamp(y / Math.max(1, document.documentElement.scrollHeight - innerHeight), 0, 1);
+  markBars.forEach((b, i) => b.style.setProperty('--f', clamp(q * 3 - i, 0, 1).toFixed(3)));
+  Tick.v = lerp(Tick.v, dy * 6, .5); if (dy) Tick.dir = dy > 0 ? 1 : -1;
+  wake();
+}
+addEventListener('scroll', onScroll, { passive: true });
+
+/* ───────────────────────── boot ───────────────────────── */
+App.bands = $$('.bands > .band').map((el, i) => new Band(el, el.dataset.band, i));
+App.lookChanged();
+App.ready = true;
+setOcc('all', false); paintLoom();
+pin(App.look);
+sizePhone(); sizeHi(); renderHow(); onScroll();
+Bag.render();
+if (!REDUCE) App.bands.forEach((b, i) => { b.quiet = true; b.pos = -1.4 - i * .3; b.render(); setTimeout(() => { b.mode = 'spring'; wake(); }, 140 + i * 130); });
+wake();
+let rz = 0;
+addEventListener('resize', () => { cancelAnimationFrame(rz); rz = requestAnimationFrame(() => { App.bands.forEach((b) => { b.measure(); b.render(); }); sizePhone(); sizeHi(); renderHow(); }); });
+})();
+</script>
+</body>
+</html>
